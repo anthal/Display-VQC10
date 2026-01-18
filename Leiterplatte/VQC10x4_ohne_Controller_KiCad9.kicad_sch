@@ -5463,7 +5463,7 @@
 	)
 	(wire
 		(pts
-			(xy 72.39 180.34) (xy 72.39 190.5)
+			(xy 72.39 182.88) (xy 72.39 190.5)
 		)
 		(stroke
 			(width 0)
@@ -8083,7 +8083,7 @@
 	)
 	(wire
 		(pts
-			(xy 72.39 172.72) (xy 72.39 161.29)
+			(xy 72.39 175.26) (xy 72.39 161.29)
 		)
 		(stroke
 			(width 0)
@@ -11026,16 +11026,15 @@
 	)
 	(symbol
 		(lib_id "Device:C_Polarized")
-		(at 72.39 176.53 0)
+		(at 72.39 179.07 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "11a26550-83fa-41a6-b589-b983f6ae3c78")
 		(property "Reference" "C2"
-			(at 76.2 174.3709 0)
+			(at 69.088 175.006 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11043,8 +11042,8 @@
 				(justify left)
 			)
 		)
-		(property "Value" "C_Polarized"
-			(at 76.2 176.9109 0)
+		(property "Value" "100µ"
+			(at 67.056 182.118 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11053,7 +11052,7 @@
 			)
 		)
 		(property "Footprint" "Capacitor_THT:CP_Radial_D6.3mm_P2.50mm"
-			(at 73.3552 180.34 0)
+			(at 73.3552 182.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11062,7 +11061,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 72.39 176.53 0)
+			(at 72.39 179.07 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11071,7 +11070,7 @@
 			)
 		)
 		(property "Description" "Polarized capacitor"
-			(at 72.39 176.53 0)
+			(at 72.39 179.07 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13871,7 +13870,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "SAY40"
+		(property "Value" "1N4148"
 			(at 33.02 165.0999 90)
 			(effects
 				(font
@@ -14574,7 +14573,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "C"
+		(property "Value" "100n"
 			(at 96.52 177.7999 0)
 			(effects
 				(font
