@@ -1,4 +1,5 @@
 // © Kay Sievers <kay@versioduo.com>, 2022
+// © Andreas Thalmann, 2026
 // SPDX-License-Identifier: Apache-2.0
 
 #include "Font5x7.h"

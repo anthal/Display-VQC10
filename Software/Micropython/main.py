@@ -2,8 +2,8 @@
 #
 
 # VQC 10 einstellig
-# Mit 74HCT138 als Zeilendecoder!
-# Mit 74HCT154 als Spaltendecoder!
+# Mit 74HCT138 als Zeilendecoder
+# Mit 74HCT154 als Spaltendecoder
 
 import time
 from machine import Pin
@@ -146,32 +146,13 @@ def timer_tick(text):
     zeilen_decoder(zeile)
     
 
-#tim = Timer(period=2, mode=Timer.PERIODIC, callback=lambda t:timer_tick(text))
 tim = Timer(freq=200, mode=Timer.PERIODIC, callback=lambda t:timer_tick(text))
 # freq=500
 counter = 0
 while True:
     zeit = time.localtime(time.time())
     #print(zeit)
-    #text = "{0:02d}.{1:02d}.{2:02d} {3:02d}:{4:02d}".format(zeit[2],zeit[1],zeit[0],zeit[3],zeit[4],zeit[5])
     text = "{0:02d}.{1:02d}.  {3:02d}:{4:02d}:{5:02d}".format(zeit[2],zeit[1],zeit[0],zeit[3],zeit[4],zeit[5])    
-    
-    #time.sleep(1)
-    #text = "S:{1:02d}".format(zeit[4], zeit[5])
-    #print(text)
-    #time.sleep(1)
-    #text = "23°C"
-    #text = "ABCDEFGHIJKLMNOP"
-    #text = "Guten Abend Rosi"
-    #text = "* Hallo Holger *"
-    #text = "1234"
-    #print(ord("°"))
-    #text = "{0:016d}".format(counter)
-    #print(text)
-    #counter += 1
-    #if counter > 9999:
-    #    counter = 0
-    #time.sleep(0.1)
     time.sleep(1)
     
     

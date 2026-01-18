@@ -6,8 +6,8 @@
 #include "VQC10.h"
 
 // WLAN
-const char* ssid = "anth-0";
-const char* password = "anthal-17!";
+const char* ssid = "ssid";
+const char* password = "password";
 
 // NTP
 WiFiUDP ntpUDP;
@@ -16,15 +16,13 @@ NTPClient timeClient(ntpUDP, "pool.ntp.org", 3600, 60000);  // CET
 datetime_t dt;  // RTC-Datentyp
 
 static VQC10<> LED({
-  {20, 19, 18, 17, 16, 10},     // Digits über Dekoder - d:\Projekte\Displays\VQC 10\Arduino\VQC10-main\src\Font5x7.cpp
-  {28, 27, 26, 22, 21}, // Spalten
-  {15, 14, 12, 8},      // Zeilen über Dekoder: Pin 8 (De-)Aktivierung des Zeilendecoders 
+  {20, 19, 18, 17, 16, 10}, // Digits über Dekoder - d:\Projekte\Displays\VQC 10\Arduino\VQC10-main\src\Font5x7.cpp
+  {28, 27, 26, 22, 21}, 	// Spalten
+  {15, 14, 12, 8},      	// Zeilen über Dekoder: Pin 8 (De-)Aktivierung des Zeilendecoders 
 });
 
-//static const char text[] = "1234567890123456";
 //String text =   "VQC10 Terminal  ";
 String text =   "";
-//String text = "Andreas Thalmann und Rosi --------------";         // Speichert empfangene Zeichen
 bool stringComplete = false;     // Flag für vollständige Zeile
 
 void setup() {
@@ -77,13 +75,11 @@ void loop() {
   // RTC lesen
   datetime_t now;
   rtc_get_datetime(&now);
-  //Serial.printf("Uhrzeit: %04d.%02d.%02d %02d:%02d:%02d\n", now.year, now.month, now.day, now.hour, now.min, now.sec);
   sprintf(buffer, "%02d:%02d:%02d  %02d.%02d.", now.hour, now.min, now.sec, now.day, now.month);
   text = buffer;
 
   //Serial.printf(text);
   count = 0;
-  //if ((unsigned long)(micros() - usec) > 150UL * 1000) {   
   // laengere Scrollzeit:   
   if ((unsigned long)(micros() - usec) > 150UL * 2000) {      
     usec = micros();
