@@ -1,13 +1,14 @@
 # VQC10
 DDR LED Punkt-Matrix-Display VQC10
 
-![Leiterplatte](Images/4xVQC10.jpg)
+![Leiterplatte](Images/4xVQC10_off.jpg)
+![Leiterplatte](Images/4xVQC10_on.jpg)
 
 ## Gehäuse
 * folgt noch
 
 ## Leiterplatte
-* KiCAD 9 Projet
+* KiCAD 9 Projekt
 
 ## Literatur
 * Datenblatt
