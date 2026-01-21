@@ -1,5 +1,5 @@
 # VQC10
-DDR LED Punkt-Matrix-Display VQC10
+DDR LED Punkt-Matrix-Display VQC10 (Leiterplatte und Code)
 
 ![Leiterplatte](Images/4xVQC10_off.jpg)
 ![Leiterplatte](Images/4xVQC10_on.jpg)

@@ -6,20 +6,24 @@ static VQC10<> LED({
   {15, 14, 12, 8},      	  // Zeilen über Dekoder: Pin 8 (De-)Aktivierung des Zeilendecoders 
 });
 
-String text =   "";
+//String text = "1234567890123456";
+String text = "Serial 115 kBaud";
 bool stringComplete = false;     // Flag für vollständige Zeile
+static unsigned long usec{};
+static uint16_t count{};
 
 void setup() {
   Serial.begin(115200);
   // Init:
   LED.begin();
   Serial.printf("Start VQC10\n");
+  for (uint8_t i = 0; i < 16; i++) {
+    LED.show(i, text[count + i]);
+  }
+  text = "";
 }
 
 void loop() {
-  static unsigned long usec{};
-  static uint16_t count{};
-
   while (Serial.available() > 0) {
     char inChar = (char)Serial.read();  // Nächstes Zeichen lesen
     text += inChar;
