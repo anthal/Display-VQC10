@@ -4,10 +4,7 @@
 #include <TimeLib.h>        // Michael Margolis
 #include <RP2040_RTC.h>     // Khoi Hoang (optional, für persistente RTC)
 #include "VQC10.h"
-
-// WLAN
-const char* ssid = "ssid";
-const char* password = "password";
+#include "secrets.h"
 
 // NTP
 WiFiUDP ntpUDP;
@@ -33,7 +30,7 @@ void setup() {
   Serial.begin(115200);
   //delay(2000);
   // WLAN & NTP
-  WiFi.begin(ssid, password);
+  WiFi.begin(WLAN_SSID, WLAN_PASS);
   Serial.println("Warte auf WLAN Verbindung");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
