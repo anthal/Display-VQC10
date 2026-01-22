@@ -6,7 +6,8 @@ static VQC10<> LED({
   {15, 14, 12, 8},      	  // Zeilen über Dekoder: Pin 8 (De-)Aktivierung des Zeilendecoders 
 });
 
-static const char text[] = "1234567890123456";
+//static const char text[] = "1234567890123456";
+static const char text[] = "= Hallo VQC 10 =";
 
 void setup() {
   Serial.begin(115200);
@@ -21,7 +22,6 @@ void loop() {
   static uint16_t count{};
 
   // für alle 16 Stellen:
-  //Serial.printf("count: %1d - %c %c %c %c\n", count, text[count + 0], text[count + 1], text[count + 2], text[count + 3]);
   for (uint8_t i = 0; i < 16; i++) {
     LED.show(i, text[count + i]);
   }

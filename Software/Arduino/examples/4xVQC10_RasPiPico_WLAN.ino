@@ -17,30 +17,31 @@ datetime_t dt;  // RTC-Datentyp
 
 static VQC10<> LED({
   {20, 19, 18, 17, 16, 10}, // Digits über Dekoder - d:\Projekte\Displays\VQC 10\Arduino\VQC10-main\src\Font5x7.cpp
-  {28, 27, 26, 22, 21}, 	// Spalten
-  {15, 14, 12, 8},      	// Zeilen über Dekoder: Pin 8 (De-)Aktivierung des Zeilendecoders 
+  {28, 27, 26, 22, 21}, 	  // Spalten
+  {15, 14, 12, 8},      	  // Zeilen über Dekoder: Pin 8 (De-)Aktivierung des Zeilendecoders 
 });
 
-//String text =   "VQC10 Terminal  ";
-String text =   "";
-bool stringComplete = false;     // Flag für vollständige Zeile
+static unsigned long usec{};
+static uint16_t count{};
+char buffer[64];
+String text;
 
 void setup() {
   // Init:
   LED.begin();
 
   Serial.begin(115200);
-  delay(1000);
-
+  //delay(2000);
   // WLAN & NTP
   WiFi.begin(ssid, password);
+  Serial.println("Warte auf WLAN Verbindung");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-  Serial.println("\nWLAN OK");
+  Serial.println("\nWLAN Verbindung OK");
 
-    timeClient.begin();
+  timeClient.begin();
   timeClient.update();
   unsigned long epoch = timeClient.getEpochTime();
 
@@ -61,40 +62,37 @@ void setup() {
   char datumStr[64];
   strftime(datumStr, sizeof(datumStr), "%Y.%m.%d %H:%M:%S", ti);
   Serial.println("RTC gesetzt: " + String(datumStr));
+  Serial.printf("Start VQC10\n");
 
+  IPAddress ip = WiFi.localIP();
   WiFi.disconnect();
 
-  Serial.printf("Start VQC10\n");
+  text = String(ip[0]) + "." +
+         String(ip[1]) + "." +
+         String(ip[2]) + "." +
+         String(ip[3]);
+  
+  // 5 Sekunden lang die IP-Adresse anzeigen:
+  unsigned long startzeit = micros();  // Startzeit merken
+  while ((unsigned long)(micros() - startzeit) < 5000000UL) {  
+    for (uint8_t i = 0; i < 16; i++) {
+      LED.show(i, text[count + i]);
+    }
+    LED.loop();
+  }
 }
 
 void loop() {
-  static unsigned long usec{};
-  static uint16_t count{};
-  char buffer[64];
-
   // RTC lesen
   datetime_t now;
   rtc_get_datetime(&now);
   sprintf(buffer, "%02d:%02d:%02d  %02d.%02d.", now.hour, now.min, now.sec, now.day, now.month);
   text = buffer;
-
-  //Serial.printf(text);
-  count = 0;
-  // laengere Scrollzeit:   
-  if ((unsigned long)(micros() - usec) > 150UL * 2000) {      
-    usec = micros();
-
-    // für alle 16 Stellen:
-    //Serial.printf("count: %1d - %c %c %c %c\n", count, text[count + 0], text[count + 1], text[count + 2], text[count + 3]);
-    for (uint8_t i = 0; i < 16; i++) {
-      LED.show(i, text[count + i]);
-    }
-      
-    count++;
-    if (count + 16 == sizeof(text))
-      count = 0;
+  // für alle 16 Stellen:
+  //Serial.printf("count: %1d - %c %c %c %c\n", count, text[count + 0], text[count + 1], text[count + 2], text[count + 3]);
+  for (uint8_t i = 0; i < 16; i++) {
+    LED.show(i, text[count + i]);
   }
-  //delay(1000);
   LED.loop();  
-  
 }
+

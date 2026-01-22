@@ -7,7 +7,8 @@ static VQC10<> LED({
 });
 
 //String text = "1234567890123456";
-String text = "Serial 115 kBaud";
+//String text = "Serial 115 kBaud";
+String text = "VQC10 Terminal  ";
 bool stringComplete = false;     // Flag für vollständige Zeile
 static unsigned long usec{};
 static uint16_t count{};
@@ -17,6 +18,7 @@ void setup() {
   // Init:
   LED.begin();
   Serial.printf("Start VQC10\n");
+  
   for (uint8_t i = 0; i < 16; i++) {
     LED.show(i, text[count + i]);
   }
@@ -32,28 +34,19 @@ void loop() {
     }  
   }  
 
-  //stringComplete = true;
   if (stringComplete) {
     Serial.print("Empfangene Zeile: ");
     Serial.println(text);
     count = 0;
-    // laengere Scrollzeit:   
-    if ((unsigned long)(micros() - usec) > 150UL * 2000) {      
-      usec = micros();
-
-      // für alle 16 Stellen:
-      //Serial.printf("count: %1d - %c %c %c %c\n", count, text[count + 0], text[count + 1], text[count + 2], text[count + 3]);
-      for (uint8_t i = 0; i < 16; i++) {
-        LED.show(i, text[count + i]);
-      }
-      text = "";
-      stringComplete = false;
-      
-      count++;
-      if (count + 16 == sizeof(text))
-        count = 0;
+    // für alle 16 Stellen:
+    for (uint8_t i = 0; i < 16; i++) {
+      LED.show(i, text[count + i]);
     }
+    text = "";
+    stringComplete = false;
+    count++;
+    if (count + 16 == sizeof(text))
+      count = 0;
   }
   LED.loop();
-  
 }
