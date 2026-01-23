@@ -23,12 +23,26 @@ static uint16_t count{};
 char buffer[64];
 String text;
 
+// Anzeige vom Text fuer eine bestimmte Zeit (time) auf dem VQC10:
+void show_vqc(String text, int time) {
+  unsigned long startzeit = micros();  // Startzeit merken
+  while ((unsigned long)(micros() - startzeit) < time * 1000000UL) {
+    // fuer alle 16 Stellen:
+    for (uint8_t i = 0; i < 16; i++) {
+      LED.show(i, text[count + i]);
+    }
+    LED.loop();
+  }
+}
+
 void setup() {
   // Init:
   LED.begin();
 
   Serial.begin(115200);
-  //delay(2000);
+
+  show_vqc("Warte auf WLAN..", 3);
+
   // WLAN & NTP
   WiFi.begin(WLAN_SSID, WLAN_PASS);
   Serial.println("Warte auf WLAN Verbindung");
@@ -37,7 +51,7 @@ void setup() {
     Serial.print(".");
   }
   Serial.println("\nWLAN Verbindung OK");
-
+  show_vqc("WLAN Verbind. OK", 3);
   timeClient.begin();
   timeClient.update();
   unsigned long epoch = timeClient.getEpochTime();
@@ -70,13 +84,7 @@ void setup() {
          String(ip[3]);
   
   // 5 Sekunden lang die IP-Adresse anzeigen:
-  unsigned long startzeit = micros();  // Startzeit merken
-  while ((unsigned long)(micros() - startzeit) < 5000000UL) {  
-    for (uint8_t i = 0; i < 16; i++) {
-      LED.show(i, text[count + i]);
-    }
-    LED.loop();
-  }
+  show_vqc(text, 5);
 }
 
 void loop() {
@@ -85,11 +93,6 @@ void loop() {
   rtc_get_datetime(&now);
   sprintf(buffer, "%02d:%02d:%02d  %02d.%02d.", now.hour, now.min, now.sec, now.day, now.month);
   text = buffer;
-  // für alle 16 Stellen:
-  //Serial.printf("count: %1d - %c %c %c %c\n", count, text[count + 0], text[count + 1], text[count + 2], text[count + 3]);
-  for (uint8_t i = 0; i < 16; i++) {
-    LED.show(i, text[count + i]);
-  }
-  LED.loop();  
+  show_vqc(text, 1);
 }
 
