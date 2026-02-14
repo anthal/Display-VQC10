@@ -3,6 +3,7 @@ DDR LED Punkt-Matrix-Display VQC10 (Leiterplatte und Code)
 
 ![Leiterplatte](Images/4xVQC10_off.jpg)
 ![Leiterplatte](Images/4xVQC10_on.jpg)
+![Leiterplatte](Images/8xVQC10_on.jpg)
 
 ## Gehäuse
 * folgt noch
