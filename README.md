@@ -25,12 +25,19 @@ DDR LED Punkt-Matrix-Display VQC10 (Leiterplatte und Code)
 
 
 ## Software
-Für den Raspberry Pi Pico
-  
 ### Arduino Code
+* Für den Raspberry Pi Pico
 * auf Basis von https://github.com/versioduo/VQC10
 * Vor Compilierung Example Datei und Files aus scr Verzeichnis in ein gemeinsames Verzeichnis verschieben
 
 ### Micropython Code
-* auf Basis von https://github.com/versioduo/VQC10
+* Für den Raspberry Pi Pico
+
+### Z80-Assembler
+* Für den aZ80/RC2016-Computer
+* Entwicklungssoftware:
+** "Small Computer-Monitor"
+** https://smallcomputercentral.com/small-computer-monitor/
+ 
+
 

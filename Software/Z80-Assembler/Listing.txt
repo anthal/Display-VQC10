@@ -1,0 +1,361 @@
+                    0001  #TARGET     Simulated_Z80       ; Determines hardware support included
+                    0001              .COMP Simulated_Z80 ; Select computer
+                    0002              .PROC Z80           ; Select processor
+                    0003              .ORG  0             ; Assemble code here
+0000:               0004  PortOut:    .EQU  0x00          ; Output port
+0000:               0005  PortIn:     .EQU  0x00          ; Input port
+0001:               0006  TermOut:    .EQU  0x01          ; Terminal output port
+0002:               0007  TermIn:     .EQU  0x02          ; Terminal input port
+0003:               0008  PrintOut:   .EQU  0x03          ; Printer output port
+4000:               0009  ScrnStrt:   .EQU  0x4000        ; Screen: Start address
+0800:               0010  ScrnLen:    .EQU  0x800         ; Screen: Length
+0038:               0011  IntMode1:   .EQU  0x38          ; Interrupt routine address
+                    0002  ; ToDo:
+                    0003  ; - Test RAM/Stack 
+                    0004          ORG 8000h
+                    0005  ; Text zur Anzeige auf Display: 
+0000:               0006  TEXT:       
+                    0007  ;         DB "Rosi und Andi !!",0
+                    0008  ;         DB "Z80 mit 4x VQC10"
+                    0009  ;          DB " 4444           "
+                    0010  ;          DB "1234567890&#$&()"
+8000: 41 42 43 44   0011            DB "ABCDEFGHIJKLMNOP"
+8004: 45 46 ...     0022  
+                    0012  ;          DB "QRSTUVWXYZabcdef"
+                    0013  ;          DB "ghijklmnopqrstux"
+                    0014  ; ------------------------------------------------------------
+                    0015  ;        CPU Z80
+                    0016          ORG 8100h
+                    0017  ; SimulIDE:
+                    0018  ; 1024 Byte ROM: 0000h-03FFh
+                    0019  ;  512 Byte RAM: 8000h-84FFh
+                    0020  ;        ld sp,8400h ; Init Stackpointer
+                    0021  ; LC80:?
+                    0022  ; 1024 Byte ROM: 000h-3FFh
+                    0023  ; 1024 Byte RAM: 400h-7FFh
+                    0024          ; ld sp,0600h ; Init Stackpointer
+                    0025  
+                    0026  ; z80 out adr. 0 und 1
+                    0027      
+                    0028  
+0000:               0029  port1:  EQU  000h          ;LED port address
+0001:               0030  port2:  EQU  001h          ;LED port address
+0000:               0031  init:   
+8100: 3E 07         0032          ld a,7
+8102: D3 00         0033          out (port1),a           ; Deaktivierung Zeilendekoder:
+8104: 3E 10         0034          ld a,16                 ; ein Digit weiter als vorhanden
+8106: D3 01         0035          out (port2),a           ; Digitdecoder aus
+                    0036  
+0000:               0037  START1
+                    0038          ; alle Portpins auf 0 setzen:
+8108: 06 00         0039          ld b,0                  ; Zeilenzaehler / 16 bit Tmp.
+810A: 0E 00         0040          ld c,0                  ; Zeilenzaehler
+                    0041  ;        ld d,0                 ; Daten aller 5 spalten einer Zeile (5 Bit)
+0000:               0042  START2:
+810C: 1E 00         0043          ld e,0                  ; Digit-Zaehler/-Adresse
+                    0044          
+0000:               0045  digits: ; fuer alle Stellen:
+                    0046          ; hole Daten zur Anzeige:
+                    0047          ; mul hl,e   ; Positioniere Digit im Zeichengenerator
+810E: 21 00 80      0048          ld hl,TEXT
+8111: 16 00         0049          ld d,0
+8113: 19            0050          add hl,de               ; Zeichencode von aktuellem Digit holen
+8114: 7E            0051          ld a,(hl)
+8115: D6 20         0052          sub a,20h               ; Offset wegen fehlender Fonts am Anfang des Zeichengenerators
+8117: C5            0053          PUSH BC
+8118: D5            0054          PUSH DE
+                    0055          ; E * D -> HL (16 Bit)
+8119: 16 07         0056          LD D,7 
+811B: 5F            0057          LD E,A
+811C: CD 6D 81      0058          CALL MULTIP 
+811F: 01 8B 81      0059          LD BC,FONT
+8122: 09            0060          ADD HL,BC
+8123: D1            0061          POP DE
+8124: C1            0062          POP BC
+8125: 06 00         0063          ld b,0
+8127: 16 00         0064          ld d,0
+8129: 09            0065          add hl,bc               ; Offset zu aktueller Zeile im Zeichengenerator
+812A: 7E            0066          ld a,(hl)               ; Hole Daten aus Zeichengenerator
+812B: CB 27         0067          sla a                   ; bits 3 stellen nach links
+812D: CB 27         0068          sla a                   ; bits 3 stellen nach links
+812F: CB 27         0069          sla a                   ; bits 3 stellen nach links
+8131: F6 07         0070          or 7                    ; alle Zeilen aus
+8133: D3 00         0071          out (port1),a           ; Daten Zeile ausgeben
+8135: 57            0072          ld d,a                  ; Zeilendaten sichern
+                    0073          
+                    0074          ; Adr. vom Digit ausgeben:
+8136: 7B            0075          ld a,e
+8137: D3 01         0076          out (port2),a
+                    0077          ; Deaktivierung Stellendekoder zur Datenbernahme ueber L/H-Flanke
+8139: 3E 10         0078          ld a,16
+813B: D3 01         0079          out (port2),a
+                    0080  
+813D: 1C            0081          inc e
+813E: 7B            0082          ld a,e
+813F: FE 10         0083          cp 16                ; Anzahl der Digits (Ende Digit-Schleife)
+8141: 20 CB         0084          jr nz,digits
+                    0085  
+                    0086          ; Aktivierung Zeilendekoder:
+8143: 7A            0087          ld a,d
+8144: E6 F8         0088          and 11111000b
+8146: B1            0089          or c                ; Bit 0-2 HIGH
+8147: D3 00         0090          out (port1),a
+                    0091          ; Kurz Warten zur Darstellung der aktuellen Zeile:
+8149: CD 66 81      0092          call DELAY
+                    0093          ; Deaktivierung Zeilendekoder:
+814C: 3E 07         0094          ld a,7
+814E: D3 00         0095          out (port1),a
+                    0096  
+8150: 0C            0097          inc c
+8151: 79            0098          ld a,c
+8152: FE 07         0099          cp 7                ; Teste Zeilenzaehler
+8154: 20 B6         0100          jr nz,START2
+8156: C3 08 81      0101          jp START1
+                    0102  ; ------------------------------------------------------------
+                    0103  ; Unterprogramm DELAY
+                    0104  ; Eingabeparameter in Register B - Verzögerungszeit 0FFh ca. 1 Sekunde
+0000:               0105  DELAY0: 
+8159: E5            0106          PUSH HL             ; Preserve HL
+815A: D5            0107          PUSH DE             ; Preserve DE
+815B: C5            0108          PUSH BC             ; Preserve BC
+815C: 11 01 00      0109          LD   DE,1           ; Delay time = X ms
+815F: 0E 0A         0110          LD   C,0Ah          ; API 0x0A
+8161: F7            0111          RST  30h            ;  = Delay by DE ms
+8162: C1            0112          POP  BC             ; Restore BC
+8163: D1            0113          POP  DE             ; Restore DE
+8164: E1            0114          POP  HL             ; Restore HL
+8165: C9            0115          RET
+                    0116  ; ------------------------------------------------------------
+0000:               0117  DELAY: 
+8166: 3E FF         0118          LD      A,0FFH
+8168: 00            0119  LOOP3:  NOP
+8169: 3D            0120          DEC     A
+816A: 20 FC         0121          JR      NZ,LOOP3
+816C: C9            0122          RET           
+                    0123  ; ------------------------------------------------------------
+0000:               0124  MULTIP: 
+                    0125          ; E * D -> HL (16 Bit)
+816D: 21 00 00      0126          LD HL, 0     ; Ergebnis initialisieren
+8170: 7A            0127          LD A, D      ; A = Multiplikator kopieren
+8171: B7            0128          OR A         ; Ist A == 0?
+8172: C8            0129          RET Z        ; Ja -> Ergebnis 0
+8173: 47            0130          LD B, A      ; B = Schleifenzähler (Multiplikator)
+8174: 7B            0131          LD A, E      ; DE = Multiplikand (E in DE erweitern)
+8175: 16 00         0132          LD D, 0
+0000:               0133  MUL_LOOP:
+8177: 19            0134          ADD HL, DE   ; HL += DE
+8178: 10 FD         0135          DJNZ MUL_LOOP ; B-- und wiederholen
+817A: C9            0136          RET          ; Fertig, HL = E * D
+                    0137  ; ------------------------------------------------------------
+                    0138  ; Text zur Anzeige auf Display: 
+0000:               0139  TEXT2:       
+                    0140  ;         DB "Rosi und Andi !!",0
+817B: 5A 38 30 20   0141           DB "Z80 mit 4x VQC10"
+817F: 6D 69 ...     0152  
+                    0142  ;          DB " 4444           "
+                    0143  ;          DB "1234567890&#$&()"
+                    0144  ;          DB "ABCDEFGHIJKLMNOP"
+                    0145  ;          DB "QRSTUVWXYZabcdef"
+                    0146  ;          DB "ghijklmnopqrstux"
+                    0147  ; ------------------------------------------------------------
+                    0148  ; Tabelle für ASCII-Zeichencodes: 
+                    0149  ; Definiere Zeichencodes:
+0000:               0150  FONT:
+818B: 00 00 00 00   0151      DB 00h,00h,00h,00h,00h,00h,00h ; 20h: Space
+818F: 00 00 00      0162  
+8192: 04 04 04 04   0152      DB 04h,04h,04h,04h,04h,00h,04h ; !
+8196: 04 00 04      0163  
+8199: 0A 0A 0A 00   0153      DB 0Ah,0Ah,0Ah,00h,00h,00h,00h ; "
+819D: 00 00 00      0164  
+81A0: 0A 0A 1F 0A   0154      DB 0Ah,0Ah,1Fh,0Ah,1Fh,0Ah,0Ah ; #
+81A4: 1F 0A 0A      0165  
+81A7: 04 0F 14 0E   0155      DB 04h,0Fh,14h,0Eh,05h,1Eh,04h ; $
+81AB: 05 1E 04      0166  
+81AE: 18 19 02 04   0156      DB 18h,19h,02h,04h,08h,13h,03h ; %
+81B2: 08 13 03      0167  
+81B5: 0C 12 14 08   0157      DB 0Ch,12h,14h,08h,15h,12h,0Dh ; &
+81B9: 15 12 0D      0168  
+81BC: 0C 04 08 00   0158      DB 0Ch,04h,08h,00h,00h,00h,00h ; '
+81C0: 00 00 00      0169  
+81C3: 02 04 08 08   0159      DB 02h,04h,08h,08h,08h,04h,02h ; (
+81C7: 08 04 02      0170  
+81CA: 08 04 02 02   0160      DB 08h,04h,02h,02h,02h,04h,08h ; )
+81CE: 02 04 08      0171  
+81D1: 00 0A 04 1F   0161      DB 00h,0Ah,04h,1Fh,04h,0Ah,00h ; *
+81D5: 04 0A 00      0172  
+81D8: 00 04 04 1F   0162      DB 00h,04h,04h,1Fh,04h,04h,00h ; +
+81DC: 04 04 00      0173  
+81DF: 00 00 00 00   0163      DB 00h,00h,00h,00h,0Ch,04h,08h ; ,
+81E3: 0C 04 08      0174  
+81E6: 00 00 00 1F   0164      DB 00h,00h,00h,1Fh,00h,00h,00h ; -
+81EA: 00 00 00      0175  
+81ED: 00 00 00 00   0165      DB 00h,00h,00h,00h,00h,0Ch,0Ch ; .
+81F1: 00 0C 0C      0176  
+81F4: 00 01 02 04   0166      DB 00h,01h,02h,04h,08h,10h,00h ; /
+81F8: 08 10 00      0177  
+81FB: 0E 11 13 15   0167      DB 0Eh,11h,13h,15h,19h,11h,0Eh ; 0
+81FF: 19 11 0E      0178  
+8202: 04 0C 04 04   0168      DB 04h,0Ch,04h,04h,04h,04h,0Eh ; 1
+8206: 04 04 0E      0179  
+8209: 0E 11 01 02   0169      DB 0Eh,11h,01h,02h,04h,08h,1Fh ; 2
+820D: 04 08 1F      0180  
+8210: 1F 02 04 02   0170      DB 1Fh,02h,04h,02h,01h,11h,0Eh ; 3
+8214: 01 11 0E      0181  
+8217: 02 06 0A 12   0171      DB 02h,06h,0Ah,12h,1Fh,02h,02h ; 4
+821B: 1F 02 02      0182  
+821E: 1F 10 1E 01   0172      DB 1Fh,10h,1Eh,01h,01h,11h,0Eh ; 5
+8222: 01 11 0E      0183  
+8225: 06 08 10 1E   0173      DB 06h,08h,10h,1Eh,11h,11h,0Eh ; 6
+8229: 11 11 0E      0184  
+822C: 1F 01 02 04   0174      DB 1Fh,01h,02h,04h,08h,08h,08h ; 7
+8230: 08 08 08      0185  
+8233: 0E 11 11 0E   0175      DB 0Eh,11h,11h,0Eh,11h,11h,0Eh ; 8
+8237: 11 11 0E      0186  
+823A: 0E 11 11 0F   0176      DB 0Eh,11h,11h,0Fh,01h,02h,0Ch ; 9
+823E: 01 02 0C      0187  
+8241: 00 0C 0C 00   0177      DB 00h,0Ch,0Ch,00h,0Ch,0Ch,00h ; :
+8245: 0C 0C 00      0188  
+8248: 00 0C 0C 00   0178      DB 00h,0Ch,0Ch,00h,0Ch,04h,08h ; ;
+824C: 0C 04 08      0189  
+824F: 01 02 04 08   0179      DB 01h,02h,04h,08h,04h,02h,01h ; <
+8253: 04 02 01      0190  
+8256: 00 00 1F 00   0180      DB 00h,00h,1Fh,00h,1Fh,00h,00h ; =
+825A: 1F 00 00      0191  
+825D: 10 08 04 02   0181      DB 10h,08h,04h,02h,04h,08h,10h ; >
+8261: 04 08 10      0192  
+8264: 0E 11 01 02   0182      DB 0Eh,11h,01h,02h,04h,00h,04h ; ?
+8268: 04 00 04      0193  
+826B: 0E 11 01 0D   0183      DB 0Eh,11h,01h,0Dh,15h,15h,0Eh ; @
+826F: 15 15 0E      0194  
+8272: 0E 11 11 11   0184      DB 0Eh,11h,11h,11h,1Fh,11h,11h ; A
+8276: 1F 11 11      0195  
+8279: 1E 11 11 1E   0185      DB 1Eh,11h,11h,1Eh,11h,11h,1Eh ; B
+827D: 11 11 1E      0196  
+8280: 0E 11 10 10   0186      DB 0Eh,11h,10h,10h,10h,11h,0Eh ; C
+8284: 10 11 0E      0197  
+8287: 1C 12 11 11   0187      DB 1Ch,12h,11h,11h,11h,12h,1Ch ; D
+828B: 11 12 1C      0198  
+828E: 1F 10 10 1E   0188      DB 1Fh,10h,10h,1Eh,10h,10h,1Fh ; E
+8292: 10 10 1F      0199  
+8295: 1F 10 10 1C   0189      DB 1Fh,10h,10h,1Ch,10h,10h,10h ; F
+8299: 10 10 10      0200  
+829C: 0E 11 10 10   0190      DB 0Eh,11h,10h,10h,13h,11h,0Eh ; G
+82A0: 13 11 0E      0201  
+82A3: 11 11 11 1F   0191      DB 11h,11h,11h,1Fh,11h,11h,11h ; H
+82A7: 11 11 11      0202  
+82AA: 0E 04 04 04   0192      DB 0Eh,04h,04h,04h,04h,04h,0Eh ; I
+82AE: 04 04 0E      0203  
+82B1: 07 02 02 02   0193      DB 07h,02h,02h,02h,02h,12h,0Ch ; J
+82B5: 02 12 0C      0204  
+82B8: 11 12 14 18   0194      DB 11h,12h,14h,18h,14h,12h,11h ; K
+82BC: 14 12 11      0205  
+82BF: 10 10 10 10   0195      DB 10h,10h,10h,10h,10h,10h,1Fh ; L
+82C3: 10 10 1F      0206  
+82C6: 11 1B 15 11   0196      DB 11h,1Bh,15h,11h,11h,11h,11h ; M
+82CA: 11 11 11      0207  
+82CD: 11 11 19 15   0197      DB 11h,11h,19h,15h,13h,11h,11h ; N
+82D1: 13 11 11      0208  
+82D4: 0E 11 11 11   0198      DB 0Eh,11h,11h,11h,11h,11h,0Eh ; O
+82D8: 11 11 0E      0209  
+82DB: 1E 11 11 1E   0199      DB 1Eh,11h,11h,1Eh,10h,10h,10h ; P
+82DF: 10 10 10      0210  
+82E2: 0E 11 11 11   0200      DB 0Eh,11h,11h,11h,15h,12h,0Dh ; Q
+82E6: 15 12 0D      0211  
+82E9: 1E 11 11 1E   0201      DB 1Eh,11h,11h,1Eh,14h,12h,11h ; R
+82ED: 14 12 11      0212  
+82F0: 0F 10 10 0E   0202      DB 0Fh,10h,10h,0Eh,01h,01h,1Eh ; S
+82F4: 01 01 1E      0213  
+82F7: 1F 04 04 04   0203      DB 1Fh,04h,04h,04h,04h,04h,04h ; T
+82FB: 04 04 04      0214  
+82FE: 11 11 11 11   0204      DB 11h,11h,11h,11h,11h,11h,0Eh ; U
+8302: 11 11 0E      0215  
+8305: 11 11 11 11   0205      DB 11h,11h,11h,11h,11h,0Ah,04h ; V
+8309: 11 0A 04      0216  
+830C: 11 11 11 15   0206      DB 11h,11h,11h,15h,15h,1Bh,11h ; W
+8310: 15 1B 11      0217  
+8313: 11 11 0A 04   0207      DB 11h,11h,0Ah,04h,0Ah,11h,11h ; X
+8317: 0A 11 11      0218  
+831A: 11 11 0A 04   0208      DB 11h,11h,0Ah,04h,04h,04h,04h ; Y
+831E: 04 04 04      0219  
+8321: 1F 01 02 04   0209      DB 1Fh,01h,02h,04h,08h,10h,1Fh ; Z
+8325: 08 10 1F      0220  
+8328: 07 04 04 04   0210      DB 07h,04h,04h,04h,04h,04h,07h ; [
+832C: 04 04 07      0221  
+832F: 00 10 08 04   0211      DB 00h,10h,08h,04h,02h,01h,00h ; \
+8333: 02 01 00      0222  
+8336: 1C 04 04 04   0212      DB 1Ch,04h,04h,04h,04h,04h,1Ch ; ]
+833A: 04 04 1C      0223  
+833D: 04 0A 11 00   0213      DB 04h,0Ah,11h,00h,00h,00h,00h ; ^
+8341: 00 00 00      0224  
+8344: 00 00 00 00   0214      DB 00h,00h,00h,00h,00h,00h,1Fh ; _
+8348: 00 00 1F      0225  
+834B: 08 04 02 00   0215      DB 08h,04h,02h,00h,00h,00h,00h ; `
+834F: 00 00 00      0226  
+8352: 00 00 0E 01   0216      DB 00h,00h,0Eh,01h,0Fh,11h,0Fh ; a
+8356: 0F 11 0F      0227  
+8359: 10 10 16 19   0217      DB 10h,10h,16h,19h,11h,11h,1Eh ; b
+835D: 11 11 1E      0228  
+8360: 00 00 0E 10   0218      DB 00h,00h,0Eh,10h,10h,11h,0Eh ; c
+8364: 10 11 0E      0229  
+8367: 01 01 0D 13   0219      DB 01h,01h,0Dh,13h,11h,11h,0Fh ; d
+836B: 11 11 0F      0230  
+836E: 00 00 0E 11   0220      DB 00h,00h,0Eh,11h,1Fh,10h,0Eh ; e
+8372: 1F 10 0E      0231  
+8375: 06 09 08 1C   0221      DB 06h,09h,08h,1Ch,08h,08h,08h ; f
+8379: 08 08 08      0232  
+837C: 00 00 0F 11   0222      DB 00h,00h,0Fh,11h,0Fh,01h,06h ; g
+8380: 0F 01 06      0233  
+8383: 10 10 16 19   0223      DB 10h,10h,16h,19h,11h,11h,11h ; h
+8387: 11 11 11      0234  
+838A: 04 00 0C 04   0224      DB 04h,00h,0Ch,04h,04h,04h,0Eh ; i
+838E: 04 04 0E      0235  
+8391: 02 00 06 02   0225      DB 02h,00h,06h,02h,02h,12h,0Ch ; j
+8395: 02 12 0C      0236  
+8398: 08 08 09 0A   0226      DB 08h,08h,09h,0Ah,0Ch,0Ah,09h ; k
+839C: 0C 0A 09      0237  
+839F: 0C 04 04 04   0227      DB 0Ch,04h,04h,04h,04h,04h,0Eh ; l
+83A3: 04 04 0E      0238  
+83A6: 00 00 1A 15   0228      DB 00h,00h,1Ah,15h,15h,11h,11h ; m
+83AA: 15 11 11      0239  
+83AD: 00 00 16 19   0229      DB 00h,00h,16h,19h,11h,11h,11h ; n
+83B1: 11 11 11      0240  
+83B4: 00 00 0E 11   0230      DB 00h,00h,0Eh,11h,11h,11h,0Eh ; o
+83B8: 11 11 0E      0241  
+83BB: 00 00 1E 11   0231      DB 00h,00h,1Eh,11h,1Eh,10h,10h ; p
+83BF: 1E 10 10      0242  
+83C2: 00 00 0D 13   0232      DB 00h,00h,0Dh,13h,0Fh,01h,01h ; q
+83C6: 0F 01 01      0243  
+83C9: 00 00 16 19   0233      DB 00h,00h,16h,19h,10h,10h,10h ; r
+83CD: 10 10 10      0244  
+83D0: 00 00 0E 10   0234      DB 00h,00h,0Eh,10h,0Eh,01h,1Eh ; s
+83D4: 0E 01 1E      0245  
+83D7: 08 08 1C 08   0235      DB 08h,08h,1Ch,08h,08h,09h,06h ; t
+83DB: 08 09 06      0246  
+83DE: 00 00 11 11   0236      DB 00h,00h,11h,11h,11h,13h,0Dh ; u
+83E2: 11 13 0D      0247  
+83E5: 00 00 11 11   0237      DB 00h,00h,11h,11h,11h,0Ah,04h ; v
+83E9: 11 0A 04      0248  
+83EC: 00 00 11 11   0238      DB 00h,00h,11h,11h,15h,15h,0Ah ; w
+83F0: 15 15 0A      0249  
+83F3: 00 00 11 0A   0239      DB 00h,00h,11h,0Ah,04h,0Ah,11h ; x
+83F7: 04 0A 11      0250  
+83FA: 00 00 11 11   0240      DB 00h,00h,11h,11h,0Fh,01h,0Eh ; y
+83FE: 0F 01 0E      0251  
+8401: 00 00 1F 02   0241      DB 00h,00h,1Fh,02h,04h,08h,1Fh ; z
+8405: 04 08 1F      0252  
+8408: 02 04 04 08   0242      DB 02h,04h,04h,08h,04h,04h,02h ; {
+840C: 04 04 02      0253  
+840F: 04 04 04 04   0243      DB 04h,04h,04h,04h,04h,04h,04h ; |
+8413: 04 04 04      0254  
+8416: 08 04 04 02   0244      DB 08h,04h,04h,02h,04h,04h,08h ; }
+841A: 04 04 08      0255  
+                    0245  
+                    0246  
+                    0247  
+                    0248  
+                    0249  
+                    0250  
+                    0251  
+                    0252  
+                    0253  
+ 
