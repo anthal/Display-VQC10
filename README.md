@@ -16,6 +16,9 @@ DDR LED Punkt-Matrix-Display VQC10 (Leiterplatte und Code)
 
 ## Simulation
 * Simulation von 1x VQC10 mit Z80 mit SimulIDE
+* https://simulide.com/
+![Leiterplatte](Images/simulide.png)
+
 
 ## Software
 Für den Raspberry Pi Pico
