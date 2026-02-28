@@ -35,9 +35,10 @@ DDR LED Punkt-Matrix-Display VQC10 (Leiterplatte und Code)
 
 ### Z80-Assembler
 * Für den aZ80/RC2016-Computer
-* Entwicklungssoftware:
-** "Small Computer-Monitor"
-** https://smallcomputercentral.com/small-computer-monitor/
+
+Entwicklungssoftware:
+* "Small Computer-Monitor"
+* https://smallcomputercentral.com/small-computer-monitor/
  
 
 
