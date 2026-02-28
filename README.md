@@ -3,7 +3,8 @@ DDR LED Punkt-Matrix-Display VQC10 (Leiterplatte und Code)
 
 ![Leiterplatte](Images/4xVQC10_on.jpg)
 ![Leiterplatte](Images/8xVQC10_on.jpg)
-![Leiterplatte](Images/aZ80  mit 4x VQC10.jpg)
+![Leiterplatte](Images/aZ80 mit 4x VQC10.jpg)
+
 4x VQC10 am aZ80 Computer
 
 ## Gehäuse
