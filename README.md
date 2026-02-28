@@ -1,7 +1,6 @@
 # VQC10
 DDR LED Punkt-Matrix-Display VQC10 (Leiterplatte und Code)
 
-![Leiterplatte](Images/4xVQC10_off.jpg)
 ![Leiterplatte](Images/4xVQC10_on.jpg)
 ![Leiterplatte](Images/8xVQC10_on.jpg)
 
@@ -14,6 +13,9 @@ DDR LED Punkt-Matrix-Display VQC10 (Leiterplatte und Code)
 ## Literatur
 * Datenblatt
 * Schaltungen aus der rfe
+
+## Simulation
+* Simulation von 1x VQC10 mit Z80 mit SimulIDE
 
 ## Software
 Für den Raspberry Pi Pico

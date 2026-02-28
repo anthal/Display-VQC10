@@ -1,0 +1,268 @@
+ AS V1.42 Beta [Bld 269] - Source File z80_out1_2.asm - Page 1 - 2/28/2026 12:4:14
+
+
+    1/   0 :                            ; TODO:
+    2/   0 :                            ; - TEST RAM/STACK 
+    3/   0 :                            
+    4/   0 :                                    CPU Z80
+    5/   0 :                                    ORG 0H
+    6/   0 :                            ; SIMULIDE:
+    7/   0 :                            ; 1024 BYTE ROM: 0000H-03FFH
+    8/   0 :                             ; 512 BYTE RAM: 8000H-84FFH
+    9/   0 : 31 00 84                           LD SP,8400H ; INIT STACKPOINTER
+   10/   3 :                            ; LC80:?
+   11/   3 :                            ; 1024 BYTE ROM: 000H-3FFH
+   12/   3 :                            ; 1024 BYTE RAM: 400H-7FFH
+   13/   3 :                                    ; LD SP,0600H ; INIT STACKPOINTER
+   14/   3 :                            
+   15/   3 :                            ; Z80 OUT ADR. 0 UND 1
+   16/   3 :                                
+   17/   3 :                            
+   18/   3 : =0H                        PORT1:  EQU  000H          ;LED PORT ADDRESS
+   19/   3 : =1H                        PORT2:  EQU  001H          ;LED PORT ADDRESS
+   20/   3 :                            INIT:   
+   21/   3 : 3E 07                              LD A,7
+   22/   5 : D3 00                              OUT (PORT1),A
+   23/   7 : 3E 04                              LD A,4
+   24/   9 : D3 01                              OUT (PORT2),A   ; DIGITDECODER AUS
+   25/   B :                                    
+   26/   B :                            START1:
+   27/   B :                                    ; ALLE PORTPINS AUF 0 SETZEN:
+   28/   B : 06 00                              LD B,0              ; ZEILENZAEHLER / 16 BIT TMP.
+   29/   D : 0E 00                              LD C,0              ; ZEILENZAEHLER
+   30/   F :                                    ; LD D,0            ; DATEN ALLER 5 SPALTEN EINER ZEILE (5 BIT)
+   31/   F :                            START2:
+   32/   F : 1E 00                              LD E,0              ; DIGIT-ZAEHLER/-ADRESSE
+   33/  11 :                                    
+   34/  11 :                            digits: ; fuer alle Stellen:
+   35/  11 :                                    ; hole Daten zur Anzeige:
+   36/  11 :                                    ; Positioniere Digit im Zeichengenerator
+   37/  11 : 21 71 00                           ld hl,TEXT
+   38/  14 : 16 00                              ld d,0
+   39/  16 : 19                                 add hl,de   ; Zeichencode von aktuellem Digit holen
+   40/  17 : 7E                                 ld a,(hl)
+   41/  18 : D6 20                              sub a,20h   ; neg. Offset wegen fehlender Fonts am Anfang des Zeichengenerators
+   42/  1A : C5                                 PUSH BC
+   43/  1B : D5                                 PUSH DE
+   44/  1C : 16 07                              LD D,7 
+   45/  1E : 5F                                 LD E,A
+   46/  1F :                                    ; E * D = HL (16 Bit)
+   47/  1F : CD 63 00                           CALL MULTIP 
+   48/  22 : 01 75 00                           LD BC,FONT
+   49/  25 : 09                                 ADD HL,BC
+   50/  26 : D1                                 POP DE
+   51/  27 : C1                                 POP BC
+   52/  28 : 06 00                              ld b,0
+   53/  2A : 16 00                              ld d,0
+   54/  2C : 09                                 add hl,bc       ; Offset zu aktueller Zeile im Zeichengenerator
+   55/  2D : 7E                                 ld a,(hl)       ; Hole Daten aus Zeichengenerator
+   56/  2E : CB 27                              sla a                   ; bits 3 stellen nach links
+   57/  30 : CB 27                              sla a                   ; bits 3 stellen nach links
+   58/  32 : CB 27                              sla a                   ; bits 3 stellen nach links
+   59/  34 : F6 07                              or 7                    ; alle Zeilen aus
+   60/  36 : D3 00                              out (port1),a           ; Daten Zeile ausgeben
+ AS V1.42 Beta [Bld 269] - Source File z80_out1_2.asm - Page 2 - 2/28/2026 12:4:14
+
+
+   61/  38 : 57                                 ld d,a                  ; Zeilendaten sichern
+   62/  39 :                                    
+   63/  39 :                                    ; Adr. vom Digit ausgeben:
+   64/  39 : 7B                                 ld a,e
+   65/  3A : D3 01                              out (port2),a
+   66/  3C :                                    ; Deaktivierung Stellendekoder zur Datenbernahme     ueber L/H-Flanke
+   67/  3C : 3E 04                              ld a,4
+   68/  3E : D3 01                              out (port2),a
+   69/  40 :                            
+   70/  40 : 1C                                 inc e
+   71/  41 : 7B                                 ld a,e
+   72/  42 : FE 04                              cp 4                ; Anzahl der Digits (Ende Digit-Schleife)
+   73/  44 : 20 CB                              jr nz,digits
+   74/  46 :                            
+   75/  46 :                                    ; Aktivierung Zeilendekoder:
+   76/  46 : 7A                                 ld a,d
+   77/  47 : E6 F8                              and 11111000b
+   78/  49 : B1                                 or c                ; Bit 0-2 HIGH
+   79/  4A : D3 00                              out (port1),a
+   80/  4C :                                    ; Kurz Warten zur Darstellung der aktuellen Zeile:
+   81/  4C : CD 5C 00                           call DELAY
+   82/  4F :                                    ; Deaktivierung Zeilendekoder:
+   83/  4F : 3E 07                              ld a,7
+   84/  51 : D3 00                              out (port1),a
+   85/  53 :                            
+   86/  53 : 0C                                 inc c
+   87/  54 : 79                                 ld a,c
+   88/  55 : FE 07                              cp 7                ; Teste Zeilenzaehler
+   89/  57 : 20 B6                              jr nz,START2
+   90/  59 : C3 0B 00                           jp START1
+   91/  5C :                            ; ------------------------------------------------------------
+   92/  5C :                            ; Unterprogramm DELAY (ca. 1ms)
+   93/  5C :                            DELAY: 
+   94/  5C : 3E FF                              LD      A,0FFH
+   95/  5E : 00                         LOOP3:  NOP
+   96/  5F : 3D                                 DEC     A
+   97/  60 : 20 FC                              JR      NZ,LOOP3
+   98/  62 : C9                                 RET           
+   99/  63 :                            ; ------------------------------------------------------------
+  100/  63 :                            MULTIP: 
+  101/  63 :                                    ; E * D -> HL (16 Bit)
+  102/  63 : 21 00 00                           LD HL, 0     ; Ergebnis initialisieren
+  103/  66 : 7A                                 LD A, D      ; A = Multiplikator kopieren
+  104/  67 : B7                                 OR A         ; Ist A == 0?
+  105/  68 : C8                                 RET Z        ; Ja -> Ergebnis 0
+  106/  69 : 47                                 LD B, A      ; B = Schleifenzähler (Multiplikator)
+  107/  6A : 7B                                 LD A, E      ; DE = Multiplikand (E in DE erweitern)
+  108/  6B : 16 00                              LD D, 0
+  109/  6D :                            MUL_LOOP:
+  110/  6D : 19                                 ADD HL, DE   ; HL += DE
+  111/  6E : 10 FD                              DJNZ MUL_LOOP ; B-- und wiederholen
+  112/  70 : C9                                 RET          ; Fertig, HL = E * D
+  113/  71 :                            ; ------------------------------------------------------------
+  114/  71 :                            ; TEXT ZUR ANZEIGE AUF DISPLAY: 
+  115/  71 :                            TEXT:       
+  116/  71 : 41 6E 64 69                        DB "Andi"
+  117/  75 :                                    ; DB "ABCD"
+  118/  75 :                            ; ------------------------------------------------------------
+  119/  75 :                            ; TABELLE FÜR ASCII-ZEICHENCODES: 
+  120/  75 :                            FONT:
+ AS V1.42 Beta [Bld 269] - Source File z80_out1_2.asm - Page 3 - 2/28/2026 12:4:14
+
+
+  121/  75 : 00 00 00 00 00 00 00           DB 00h,00h,00h,00h,00h,00h,00h ; 20h: Space
+  122/  7C : 04 04 04 04 04 00 04           DB 04h,04h,04h,04h,04h,00h,04h ; !
+  123/  83 : 0A 0A 0A 00 00 00 00           DB 0Ah,0Ah,0Ah,00h,00h,00h,00h ; "
+  124/  8A : 0A 0A 1F 0A 1F 0A 0A           DB 0Ah,0Ah,1Fh,0Ah,1Fh,0Ah,0Ah ; #
+  125/  91 : 04 0F 14 0E 05 1E 04           DB 04h,0Fh,14h,0Eh,05h,1Eh,04h ; $
+  126/  98 : 18 19 02 04 08 13 03           DB 18h,19h,02h,04h,08h,13h,03h ; %
+  127/  9F : 0C 12 14 08 15 12 0D           DB 0Ch,12h,14h,08h,15h,12h,0Dh ; &
+  128/  A6 : 0C 04 08 00 00 00 00           DB 0Ch,04h,08h,00h,00h,00h,00h ; '
+  129/  AD : 02 04 08 08 08 04 02           DB 02h,04h,08h,08h,08h,04h,02h ; (
+  130/  B4 : 08 04 02 02 02 04 08           DB 08h,04h,02h,02h,02h,04h,08h ; )
+  131/  BB : 00 0A 04 1F 04 0A 00           DB 00h,0Ah,04h,1Fh,04h,0Ah,00h ; *
+  132/  C2 : 00 04 04 1F 04 04 00           DB 00h,04h,04h,1Fh,04h,04h,00h ; +
+  133/  C9 : 00 00 00 00 0C 04 08           DB 00h,00h,00h,00h,0Ch,04h,08h ; ,
+  134/  D0 : 00 00 00 1F 00 00 00           DB 00h,00h,00h,1Fh,00h,00h,00h ; -
+  135/  D7 : 00 00 00 00 00 0C 0C           DB 00h,00h,00h,00h,00h,0Ch,0Ch ; .
+  136/  DE : 00 01 02 04 08 10 00           DB 00h,01h,02h,04h,08h,10h,00h ; /
+  137/  E5 : 0E 11 13 15 19 11 0E           DB 0Eh,11h,13h,15h,19h,11h,0Eh ; 0
+  138/  EC : 04 0C 04 04 04 04 0E           DB 04h,0Ch,04h,04h,04h,04h,0Eh ; 1
+  139/  F3 : 0E 11 01 02 04 08 1F           DB 0Eh,11h,01h,02h,04h,08h,1Fh ; 2
+  140/  FA : 1F 02 04 02 01 11 0E           DB 1Fh,02h,04h,02h,01h,11h,0Eh ; 3
+  141/ 101 : 02 06 0A 12 1F 02 02           DB 02h,06h,0Ah,12h,1Fh,02h,02h ; 4
+  142/ 108 : 1F 10 1E 01 01 11 0E           DB 1Fh,10h,1Eh,01h,01h,11h,0Eh ; 5
+  143/ 10F : 06 08 10 1E 11 11 0E           DB 06h,08h,10h,1Eh,11h,11h,0Eh ; 6
+  144/ 116 : 1F 01 02 04 08 08 08           DB 1Fh,01h,02h,04h,08h,08h,08h ; 7
+  145/ 11D : 0E 11 11 0E 11 11 0E           DB 0Eh,11h,11h,0Eh,11h,11h,0Eh ; 8
+  146/ 124 : 0E 11 11 0F 01 02 0C           DB 0Eh,11h,11h,0Fh,01h,02h,0Ch ; 9
+  147/ 12B : 00 0C 0C 00 0C 0C 00           DB 00h,0Ch,0Ch,00h,0Ch,0Ch,00h ; :
+  148/ 132 : 00 0C 0C 00 0C 04 08           DB 00h,0Ch,0Ch,00h,0Ch,04h,08h ; ;
+  149/ 139 : 01 02 04 08 04 02 01           DB 01h,02h,04h,08h,04h,02h,01h ; <
+  150/ 140 : 00 00 1F 00 1F 00 00           DB 00h,00h,1Fh,00h,1Fh,00h,00h ; =
+  151/ 147 : 10 08 04 02 04 08 10           DB 10h,08h,04h,02h,04h,08h,10h ; >
+  152/ 14E : 0E 11 01 02 04 00 04           DB 0Eh,11h,01h,02h,04h,00h,04h ; ?
+  153/ 155 : 0E 11 01 0D 15 15 0E           DB 0Eh,11h,01h,0Dh,15h,15h,0Eh ; @
+  154/ 15C : 0E 11 11 11 1F 11 11           DB 0Eh,11h,11h,11h,1Fh,11h,11h ; A
+  155/ 163 : 1E 11 11 1E 11 11 1E           DB 1Eh,11h,11h,1Eh,11h,11h,1Eh ; B
+  156/ 16A : 0E 11 10 10 10 11 0E           DB 0Eh,11h,10h,10h,10h,11h,0Eh ; C
+  157/ 171 : 1C 12 11 11 11 12 1C           DB 1Ch,12h,11h,11h,11h,12h,1Ch ; D
+  158/ 178 : 1F 10 10 1E 10 10 1F           DB 1Fh,10h,10h,1Eh,10h,10h,1Fh ; E
+  159/ 17F : 1F 10 10 1C 10 10 10           DB 1Fh,10h,10h,1Ch,10h,10h,10h ; F
+  160/ 186 : 0E 11 10 10 13 11 0E           DB 0Eh,11h,10h,10h,13h,11h,0Eh ; G
+  161/ 18D : 11 11 11 1F 11 11 11           DB 11h,11h,11h,1Fh,11h,11h,11h ; H
+  162/ 194 : 0E 04 04 04 04 04 0E           DB 0Eh,04h,04h,04h,04h,04h,0Eh ; I
+  163/ 19B : 07 02 02 02 02 12 0C           DB 07h,02h,02h,02h,02h,12h,0Ch ; J
+  164/ 1A2 : 11 12 14 18 14 12 11           DB 11h,12h,14h,18h,14h,12h,11h ; K
+  165/ 1A9 : 10 10 10 10 10 10 1F           DB 10h,10h,10h,10h,10h,10h,1Fh ; L
+  166/ 1B0 : 11 1B 15 11 11 11 11           DB 11h,1Bh,15h,11h,11h,11h,11h ; M
+  167/ 1B7 : 11 11 19 15 13 11 11           DB 11h,11h,19h,15h,13h,11h,11h ; N
+  168/ 1BE : 0E 11 11 11 11 11 0E           DB 0Eh,11h,11h,11h,11h,11h,0Eh ; O
+  169/ 1C5 : 1E 11 11 1E 10 10 10           DB 1Eh,11h,11h,1Eh,10h,10h,10h ; P
+  170/ 1CC : 0E 11 11 11 15 12 0D           DB 0Eh,11h,11h,11h,15h,12h,0Dh ; Q
+  171/ 1D3 : 1E 11 11 1E 14 12 11           DB 1Eh,11h,11h,1Eh,14h,12h,11h ; R
+  172/ 1DA : 0F 10 10 0E 01 01 1E           DB 0Fh,10h,10h,0Eh,01h,01h,1Eh ; S
+  173/ 1E1 : 1F 04 04 04 04 04 04           DB 1Fh,04h,04h,04h,04h,04h,04h ; T
+  174/ 1E8 : 11 11 11 11 11 11 0E           DB 11h,11h,11h,11h,11h,11h,0Eh ; U
+  175/ 1EF : 11 11 11 11 11 0A 04           DB 11h,11h,11h,11h,11h,0Ah,04h ; V
+  176/ 1F6 : 11 11 11 15 15 1B 11           DB 11h,11h,11h,15h,15h,1Bh,11h ; W
+  177/ 1FD : 11 11 0A 04 0A 11 11           DB 11h,11h,0Ah,04h,0Ah,11h,11h ; X
+  178/ 204 : 11 11 0A 04 04 04 04           DB 11h,11h,0Ah,04h,04h,04h,04h ; Y
+  179/ 20B : 1F 01 02 04 08 10 1F           DB 1Fh,01h,02h,04h,08h,10h,1Fh ; Z
+  180/ 212 : 07 04 04 04 04 04 07           DB 07h,04h,04h,04h,04h,04h,07h ; [
+ AS V1.42 Beta [Bld 269] - Source File z80_out1_2.asm - Page 4 - 2/28/2026 12:4:14
+
+
+  181/ 219 : 00 10 08 04 02 01 00           DB 00h,10h,08h,04h,02h,01h,00h ; Backspace
+  182/ 220 : 1C 04 04 04 04 04 1C           DB 1Ch,04h,04h,04h,04h,04h,1Ch ; ]
+  183/ 227 : 04 0A 11 00 00 00 00           DB 04h,0Ah,11h,00h,00h,00h,00h ; ^
+  184/ 22E : 00 00 00 00 00 00 1F           DB 00h,00h,00h,00h,00h,00h,1Fh ; _
+  185/ 235 : 08 04 02 00 00 00 00           DB 08h,04h,02h,00h,00h,00h,00h ; `
+  186/ 23C : 00 00 0E 01 0F 11 0F           DB 00h,00h,0Eh,01h,0Fh,11h,0Fh ; a
+  187/ 243 : 10 10 16 19 11 11 1E           DB 10h,10h,16h,19h,11h,11h,1Eh ; b
+  188/ 24A : 00 00 0E 10 10 11 0E           DB 00h,00h,0Eh,10h,10h,11h,0Eh ; c
+  189/ 251 : 01 01 0D 13 11 11 0F           DB 01h,01h,0Dh,13h,11h,11h,0Fh ; d
+  190/ 258 : 00 00 0E 11 1F 10 0E           DB 00h,00h,0Eh,11h,1Fh,10h,0Eh ; e
+  191/ 25F : 06 09 08 1C 08 08 08           DB 06h,09h,08h,1Ch,08h,08h,08h ; f
+  192/ 266 : 00 00 0F 11 0F 01 06           DB 00h,00h,0Fh,11h,0Fh,01h,06h ; g
+  193/ 26D : 10 10 16 19 11 11 11           DB 10h,10h,16h,19h,11h,11h,11h ; h
+  194/ 274 : 04 00 0C 04 04 04 0E           DB 04h,00h,0Ch,04h,04h,04h,0Eh ; i
+  195/ 27B : 02 00 06 02 02 12 0C           DB 02h,00h,06h,02h,02h,12h,0Ch ; j
+  196/ 282 : 08 08 09 0A 0C 0A 09           DB 08h,08h,09h,0Ah,0Ch,0Ah,09h ; k
+  197/ 289 : 0C 04 04 04 04 04 0E           DB 0Ch,04h,04h,04h,04h,04h,0Eh ; l
+  198/ 290 : 00 00 1A 15 15 11 11           DB 00h,00h,1Ah,15h,15h,11h,11h ; m
+  199/ 297 : 00 00 16 19 11 11 11           DB 00h,00h,16h,19h,11h,11h,11h ; n
+  200/ 29E : 00 00 0E 11 11 11 0E           DB 00h,00h,0Eh,11h,11h,11h,0Eh ; o
+  201/ 2A5 : 00 00 1E 11 1E 10 10           DB 00h,00h,1Eh,11h,1Eh,10h,10h ; p
+  202/ 2AC : 00 00 0D 13 0F 01 01           DB 00h,00h,0Dh,13h,0Fh,01h,01h ; q
+  203/ 2B3 : 00 00 16 19 10 10 10           DB 00h,00h,16h,19h,10h,10h,10h ; r
+  204/ 2BA : 00 00 0E 10 0E 01 1E           DB 00h,00h,0Eh,10h,0Eh,01h,1Eh ; s
+  205/ 2C1 : 08 08 1C 08 08 09 06           DB 08h,08h,1Ch,08h,08h,09h,06h ; t
+  206/ 2C8 : 00 00 11 11 11 13 0D           DB 00h,00h,11h,11h,11h,13h,0Dh ; u
+  207/ 2CF : 00 00 11 11 11 0A 04           DB 00h,00h,11h,11h,11h,0Ah,04h ; v
+  208/ 2D6 : 00 00 11 11 15 15 0A           DB 00h,00h,11h,11h,15h,15h,0Ah ; w
+  209/ 2DD : 00 00 11 0A 04 0A 11           DB 00h,00h,11h,0Ah,04h,0Ah,11h ; x
+  210/ 2E4 : 00 00 11 11 0F 01 0E           DB 00h,00h,11h,11h,0Fh,01h,0Eh ; y
+  211/ 2EB : 00 00 1F 02 04 08 1F           DB 00h,00h,1Fh,02h,04h,08h,1Fh ; z
+  212/ 2F2 : 02 04 04 08 04 04 02           DB 02h,04h,04h,08h,04h,04h,02h ; {
+  213/ 2F9 : 04 04 04 04 04 04 04           DB 04h,04h,04h,04h,04h,04h,04h ; |
+  214/ 300 : 08 04 04 02 04 04 08           DB 08h,04h,04h,02h,04h,04h,08h ; }
+  215/ 307 :                            
+ AS V1.42 Beta [Bld 269] - Source File z80_out1_2.asm - Page 5 - 2/28/2026 12:4:14
+
+
+  Symbol Table (* = unused):
+  --------------------------
+
+*ARCHITECTURE :                                        "i386-unknown-win32" - |
+*CASESENSITIVE :                  0 - | *CONSTPI :        3.141592653589793 - |
+*DATE :                 "2/28/2026" - |  DELAY :                         5C C |
+ DIGITS :                        11 C | *FALSE :                          0 - |
+ FONT :                          75 C | *HAS64 :                          0 - |
+*INIT :                           3 C | *LISTON :                         1 - |
+ LOOP3 :                         5E C | *MACEXP :                         7 - |
+*MOMCPU :                        80 - | *MOMCPUNAME :                 "Z80" - |
+ MULTIP :                        63 C |  MUL_LOOP :                      6D C |
+*NESTMAX :                      100 - |  PORT1 :                          0 - |
+ PORT2 :                          1 - | *RELAXED :                        0 - |
+ START1 :                        0B C |  START2 :                        0F C |
+ TEXT :                          71 C | *TIME :                   "12:4:14" - |
+*TRUE :                           1 - | *VERSION :                     142F - |
+*WARNRELATIVE :                   0 - |
+
+     28 symbols
+     17 unused symbols
+
+ AS V1.42 Beta [Bld 269] - Source File z80_out1_2.asm - Page 6 - 2/28/2026 12:4:14
+
+
+  Code Pages:
+  ----------
+
+STANDARD (0 changed characters)
+
+1 code page
+
+0.01 seconds assembly time
+
+    215 lines source file
+      2 passes
+      0 errors
+      0 warnings
