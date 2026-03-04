@@ -1,0 +1,453 @@
+ AS V1.42 Beta [Bld 227] - Source File vqc10a.asm - Page 1 - 3/4/2026 17:49:54
+
+
+       1/       0 :                     ;#TARGET     Simulated_Z80       ; Determines hardware support included
+       2/       0 :                     ; ToDo:
+       3/       0 :                     ; - Test RAM/Stack 
+       4/       0 :                         cpu z80
+       5/       0 :                     
+       6/       0 :                         include lc80.inc
+(1)    1/       0 :                     ; Systemaufrufe:
+(1)    2/       0 :                     
+(1)    3/       0 :                     ;ROMOFS		equ	0				; zwei 1K-ROMs
+(1)    4/       0 : =400H                ROMOFS		equ	0400h			; ein 2K-ROM
+(1)    5/       0 :                     
+(1)    6/       0 : =0ECH                CTC0		equ	0ECH			; CTC-Adressen
+(1)    7/       0 : =0EDH                CTC1		equ	0EDH
+(1)    8/       0 : =0EEH                CTC2		equ	0EEH
+(1)    9/       0 : =0EFH                CTC3		equ	0EFH
+(1)   10/       0 :                     
+(1)   11/       0 : =0F5H                DIGITAP		equ	0f5h			; Digit-Ansteuerung und Tastenmatrix
+(1)   12/       0 : =0F8H                USERPORT	equ	0f8h			; User-Port
+(1)   13/       0 : =0F9H                KEYIN		equ	0f9h			; Eingänge Tastaturabfrage, User-Port B
+(1)   14/       0 : =0FAH                PIO2AC		equ	0FAH 
+(1)   15/       0 : =0FBH                PIO2BC		equ	0FBh
+(1)   16/       0 :                     
+(1)   17/       0 : =35EH                SOU1K		equ	035eh			; 1 kHz, 80ms
+(1)   18/       0 : =367H                SOU2K		equ	0367h			; 2 kHz, 80ms
+(1)   19/       0 : =376H                SOUND		equ	0376h			; Tonsignalausgabe
+(1)   20/       0 : =483H                DAK2		equ	0883h-ROMOFS		; Anzeige 1x
+(1)   21/       0 : =45AH                DAK1		equ	085Ah-ROMOFS		; Anzeige bis Tastendruck
+(1)   22/       0 : =4B7H                ADRSDP		equ	08B7h-ROMOFS		; Eintragen von 4 Ziffern in Adressanz.speicher
+(1)   23/       0 : =4C3H                DADP		equ	08C3h-ROMOFS		; Eintragen von 2 Ziffern in Datenanz.speicher
+(1)   24/       0 : =4CAH                ONESEG		equ	08CAh-ROMOFS		; Umwandlung 1 Ziffer zur Anzeige
+(1)   25/       0 : =4D9H                TWOSEG		equ	08D9h-ROMOFS		; Umwandlung 2 Ziffern zur Anzeige
+(1)   26/       0 : =4EEH                MUSIC		equ	08EEh-ROMOFS		; Spielen von Musik
+(1)   27/       0 :                     ;
+(1)   28/       0 : =5A5H                TXT_ERR		equ	09A5h-ROMOFS		; Text "error "
+(1)   29/       0 : =5EFH                KEYTAB		equ	09EFh-ROMOFS
+(1)   30/       0 : =23F2H               DATLED		equ	23F2h			; Datenanzeige; Std-Anzeigespeicher
+(1)   31/       0 : =23F4H               ADRLED		equ	23F4h			; Adressanzeige; Std-Anzeigespeicher
+(1)   32/       0 :                     
+(1)   33/       0 :                     ; Makros
+(1)   34/       0 :                     hi              function x, (x>>8) & 0ffh	; High-Byte
+(1)   35/       0 :                     lo              function x, x & 0ffh		; Low-Byte
+(1)   36/       0 :                     
+       7/       0 :                     
+       8/       0 :                         ;org 2000h
+       9/    6000 :                         org 6000h
+      10/    6000 :                         
+      11/    6000 :                     ; ------------------------------------------------------------
+      12/    6000 :                     ; LC80:?
+      13/    6000 :                     ; 1024 Byte ROM: 000h-3FFh
+      14/    6000 :                     ; 1024 Byte RAM: 400h-7FFh
+      15/    6000 :                             ; ld sp,0600h ; Init Stackpointer
+      16/    6000 :                     
+      17/    6000 :                     ; z80 out adr. 0 und 1
+      18/    6000 :                     
+      19/    6000 : =0F8H                port1:  EQU  0F8h            ;LED port address
+      20/    6000 : =0F9H                port2:  EQU  0F9h            ;LED port address
+      21/    6000 :                     
+      22/    6000 :                     init:       
+      23/    6000 : 3E 0F                       LD      A,0FH       ; PIO Steuercode fuer Mode 0 (Byte-Ausgabe)
+      24/    6002 : D3 FA                       OUT     PIO2AC,A    ; Gebe A nach IO-Adresse FA aus (Steuerkommandos an Port A (AC): FA (AC->A-Control))
+ AS V1.42 Beta [Bld 227] - Source File vqc10a.asm - Page 2 - 3/4/2026 17:49:54
+
+
+      25/    6004 : D3 FB                       OUT     PIO2BC,A    ; Gebe A nach IO-Adresse FB aus (Steuerkommandos an Port B (BC): FA (BC->B-Control))
+      26/    6006 :                     
+      27/    6006 : 3E 07                       ld a,7
+      28/    6008 : D3 F8                       out (port1),a       ; Deaktivierung Zeilendekoder:
+      29/    600A :                     DISPLAY:
+      30/    600A :                             ; alle Portpins auf 0 setzen:
+      31/    600A : 06 00                       ld b,0              ; Zeilenzaehler / 16 bit Tmp.
+      32/    600C : 0E 00                       ld c,0              ; Zeilenzaehler
+      33/    600E :                     ;       ld d,0                 ; Daten aller 5 spalten einer Zeile (5 Bit)
+      34/    600E :                     START2:
+      35/    600E : 1E 00                       ld e,0              ; Digit-Zaehler/-Adresse
+      36/    6010 :                                 
+      37/    6010 :                     digits: ; fuer alle Stellen:
+      38/    6010 :                             ; hole Daten zur Anzeige:
+      39/    6010 :                             ; Positioniere Digit im Zeichengenerator
+      40/    6010 : 21 6F 60                    ld hl,TEXT1
+      41/    6013 : 16 00                       ld d,0
+      42/    6015 : 19                          add hl,de           ; Zeichencode von aktuellem Digit holen
+      43/    6016 : 7E                          ld a,(hl)
+      44/    6017 : D6 20                       sub A,20h           ; Offset wegen fehlender Fonts am Anfang des Zeichengenerators
+      45/    6019 : C5                          PUSH BC
+      46/    601A : D5                          PUSH DE
+      47/    601B :                             ; E * D -> HL (16 Bit)
+      48/    601B : 16 07                       LD D,7 
+      49/    601D : 5F                          LD E,A
+      50/    601E : CD 61 60                    CALL MULTIP 
+      51/    6021 : 01 CF 60                    LD BC,FONT
+      52/    6024 : 09                          ADD HL,BC
+      53/    6025 : D1                          POP DE
+      54/    6026 : C1                          POP BC
+      55/    6027 : 06 00                       ld b,0
+      56/    6029 : 16 00                       ld d,0
+      57/    602B : 09                          add hl,bc           ; Offset zu aktueller Zeile im Zeichengenerator
+      58/    602C : 7E                          ld a,(hl)           ; Hole Daten aus Zeichengenerator
+      59/    602D : CB 27                       sla a               ; bits 3 Stellen nach links
+      60/    602F : CB 27                       sla a               ; bits 3 Stellen nach links
+      61/    6031 : CB 27                       sla a               ; bits 3 Stellen nach links
+      62/    6033 : F6 07                       or 7                ; alle Zeilen aus
+      63/    6035 : D3 F8                       out (port1),a       ; Daten Zeile ausgeben
+      64/    6037 : 57                          ld d,a              ; Zeilendaten sichern
+      65/    6038 :                             
+      66/    6038 :                             ; Adr. vom Digit ausgeben:
+      67/    6038 : 7B                          ld a,e
+      68/    6039 : D3 F9                       out (port2),a
+      69/    603B :                             ; Deaktivierung Stellendekoder zur Datenbernahme ueber L/H-Flanke
+      70/    603B : 3C                          inc a
+      71/    603C : D3 F9                       out (port2),a
+      72/    603E :                     
+      73/    603E : 1C                          inc e
+      74/    603F : 7B                          ld a,e
+      75/    6040 : FE 10                       cp 16               ; Anzahl der Digits (Ende Digit-Schleife)
+      76/    6042 : 20 CC                       jr nz,digits
+      77/    6044 :                     
+      78/    6044 :                             ; Aktivierung Zeilendekoder:
+      79/    6044 : 7A                          ld a,d
+      80/    6045 : E6 F8                       and 11111000b
+      81/    6047 : B1                          or c                ; Bit 0-2 HIGH
+      82/    6048 : D3 F8                       out (port1),a
+      83/    604A :                             ; Kurz Warten zur Darstellung der aktuellen Zeile:
+      84/    604A : CD 5A 60                    call DELAY
+ AS V1.42 Beta [Bld 227] - Source File vqc10a.asm - Page 3 - 3/4/2026 17:49:54
+
+
+      85/    604D :                             ; Deaktivierung Zeilendekoder:
+      86/    604D : 3E 07                       ld a,7
+      87/    604F : D3 F8                       out (port1),a
+      88/    6051 :                     
+      89/    6051 : 0C                          inc c
+      90/    6052 : 79                          ld a,c
+      91/    6053 : FE 07                       cp 7                ; Teste Zeilenzaehler
+      92/    6055 : 20 B7                       jr nz,START2
+      93/    6057 : C3 0A 60                    jp DISPLAY
+      94/    605A :                     ; ------------------------------------------------------------
+      95/    605A :                     ; Unterprogramm DELAY
+      96/    605A :                     ; Eingabeparameter in Register B - Verzoegerungszeit 0FFh (ca. 1 Sekunde, nur mit Reg B DJNZ)
+      97/    605A :                     DELAY:
+      98/    605A :                             ; LD      A,05FH    ; wenn LC80 mit halbem Takt lÃ¤uft
+      99/    605A : 3E FF                       LD      A,0FFH      ; fuer vollen Takt
+     100/    605C : 00                  LOOP3:  NOP
+     101/    605D : 3D                          DEC     A
+     102/    605E : 20 FC                       JR      NZ,LOOP3
+     103/    6060 : C9                          RET           
+     104/    6061 :                     ; ------------------------------------------------------------
+     105/    6061 :                     MULTIP:
+     106/    6061 :                             ; E * D -> HL (16 Bit)
+     107/    6061 : 21 00 00                    LD HL, 0            ; Ergebnis initialisieren
+     108/    6064 : 7A                          LD A, D             ; A = Multiplikator kopieren
+     109/    6065 : B7                          OR A                ; Ist A == 0?
+     110/    6066 : C8                          RET Z               ; Ja -> Ergebnis 0
+     111/    6067 : 47                          LD B, A             ; B = Schleifenzaehler (Multiplikator)
+     112/    6068 : 7B                          LD A, E             ; DE = Multiplikand (E in DE erweitern)
+     113/    6069 : 16 00                       LD D, 0
+     114/    606B :                     MUL_LOOP:
+     115/    606B : 19                          ADD HL, DE          ; HL += DE
+     116/    606C : 10 FD                       DJNZ MUL_LOOP       ; B-- und wiederholen
+     117/    606E : C9                          RET                 ; Fertig, HL = E * D
+     118/    606F :                     ; ------------------------------------------------------------
+     119/    606F :                     ; Text zur Anzeige auf Display: 
+     120/    606F : 5A 38 30 20 6D 69   TEXT1:  DB "Z80 mit 4x VQC10"   ; OK
+             6075 : 74 20 34 78 20 56 
+             607B : 51 43 31 30       
+     121/    607F : 31 32 33 34 35 36   TEXT2:  DB "1234567890&#$&()"   ; OK
+             6085 : 37 38 39 30 26 23 
+             608B : 24 26 28 29       
+     122/    608F : 41 42 43 44 45 46   TEXT3:  DB "ABCDEFGHIJKLMNOP"   ; OK
+             6095 : 47 48 49 4A 4B 4C 
+             609B : 4D 4E 4F 50       
+     123/    609F : 51 52 53 54 55 56   TEXT4:  DB "QRSTUVWXYZabcdef"   ; ok
+             60A5 : 57 58 59 5A 61 62 
+             60AB : 63 64 65 66       
+     124/    60AF : 71 72 73 74 75 76   TEXT5:  DB "qrstuvwxyz[\\/]_-"  ; ok
+             60B5 : 77 78 79 7A 5B 5C 
+             60BB : 2F 5D 5F 2D       
+     125/    60BF : 61 62 63 64 65 66   TEXT6:  DB "abcdefghijklmnop"   ; ok
+             60C5 : 67 68 69 6A 6B 6C 
+             60CB : 6D 6E 6F 70       
+     126/    60CF :                     ; ------------------------------------------------------------
+     127/    60CF :                     ; Tabelle fuer ASCII-Zeichencodes: 
+     128/    60CF :                     ; Definiere Zeichencodes:
+     129/    60CF :                     FONT:
+     130/    60CF : 00 00 00 00 00 00           DB 00h,00h,00h,00h,00h,00h,00h  ; 20h: Space
+             60D5 : 00                
+     131/    60D6 : 04 04 04 04 04 00           DB 04h,04h,04h,04h,04h,00h,04h  ; !
+ AS V1.42 Beta [Bld 227] - Source File vqc10a.asm - Page 4 - 3/4/2026 17:49:54
+
+
+             60DC : 04                
+     132/    60DD : 0A 0A 0A 00 00 00           DB 0Ah,0Ah,0Ah,00h,00h,00h,00h  ; "
+             60E3 : 00                
+     133/    60E4 : 0A 0A 1F 0A 1F 0A           DB 0Ah,0Ah,1Fh,0Ah,1Fh,0Ah,0Ah  ; #
+             60EA : 0A                
+     134/    60EB : 04 0F 14 0E 05 1E           DB 04h,0Fh,14h,0Eh,05h,1Eh,04h  ; $
+             60F1 : 04                
+     135/    60F2 : 18 19 02 04 08 13           DB 18h,19h,02h,04h,08h,13h,03h  ; %
+             60F8 : 03                
+     136/    60F9 : 0C 12 14 08 15 12           DB 0Ch,12h,14h,08h,15h,12h,0Dh  ; &
+             60FF : 0D                
+     137/    6100 : 0C 04 08 00 00 00           DB 0Ch,04h,08h,00h,00h,00h,00h  ; '
+             6106 : 00                
+     138/    6107 : 02 04 08 08 08 04           DB 02h,04h,08h,08h,08h,04h,02h  ; (
+             610D : 02                
+     139/    610E : 08 04 02 02 02 04           DB 08h,04h,02h,02h,02h,04h,08h  ; )
+             6114 : 08                
+     140/    6115 : 00 0A 04 1F 04 0A           DB 00h,0Ah,04h,1Fh,04h,0Ah,00h  ; *
+             611B : 00                
+     141/    611C : 00 04 04 1F 04 04           DB 00h,04h,04h,1Fh,04h,04h,00h  ; +
+             6122 : 00                
+     142/    6123 : 00 00 00 00 0C 04           DB 00h,00h,00h,00h,0Ch,04h,08h  ; ,
+             6129 : 08                
+     143/    612A : 00 00 00 1F 00 00           DB 00h,00h,00h,1Fh,00h,00h,00h  ; -
+             6130 : 00                
+     144/    6131 : 00 00 00 00 00 0C           DB 00h,00h,00h,00h,00h,0Ch,0Ch  ; .
+             6137 : 0C                
+     145/    6138 : 00 01 02 04 08 10           DB 00h,01h,02h,04h,08h,10h,00h  ; /
+             613E : 00                
+     146/    613F : 0E 11 13 15 19 11           DB 0Eh,11h,13h,15h,19h,11h,0Eh  ; 0
+             6145 : 0E                
+     147/    6146 : 04 0C 04 04 04 04           DB 04h,0Ch,04h,04h,04h,04h,0Eh  ; 1
+             614C : 0E                
+     148/    614D : 0E 11 01 02 04 08           DB 0Eh,11h,01h,02h,04h,08h,1Fh  ; 2
+             6153 : 1F                
+     149/    6154 : 1F 02 04 02 01 11           DB 1Fh,02h,04h,02h,01h,11h,0Eh  ; 3
+             615A : 0E                
+     150/    615B : 02 06 0A 12 1F 02           DB 02h,06h,0Ah,12h,1Fh,02h,02h  ; 4
+             6161 : 02                
+     151/    6162 : 1F 10 1E 01 01 11           DB 1Fh,10h,1Eh,01h,01h,11h,0Eh  ; 5
+             6168 : 0E                
+     152/    6169 : 06 08 10 1E 11 11           DB 06h,08h,10h,1Eh,11h,11h,0Eh  ; 6
+             616F : 0E                
+     153/    6170 : 1F 01 02 04 08 08           DB 1Fh,01h,02h,04h,08h,08h,08h  ; 7
+             6176 : 08                
+     154/    6177 : 0E 11 11 0E 11 11           DB 0Eh,11h,11h,0Eh,11h,11h,0Eh  ; 8
+             617D : 0E                
+     155/    617E : 0E 11 11 0F 01 02           DB 0Eh,11h,11h,0Fh,01h,02h,0Ch  ; 9
+             6184 : 0C                
+     156/    6185 : 00 0C 0C 00 0C 0C           DB 00h,0Ch,0Ch,00h,0Ch,0Ch,00h  ; :
+             618B : 00                
+     157/    618C : 00 0C 0C 00 0C 04           DB 00h,0Ch,0Ch,00h,0Ch,04h,08h  ; ;
+             6192 : 08                
+     158/    6193 : 01 02 04 08 04 02           DB 01h,02h,04h,08h,04h,02h,01h  ; <
+             6199 : 01                
+     159/    619A : 00 00 1F 00 1F 00           DB 00h,00h,1Fh,00h,1Fh,00h,00h  ; =
+             61A0 : 00                
+     160/    61A1 : 10 08 04 02 04 08           DB 10h,08h,04h,02h,04h,08h,10h  ; >
+             61A7 : 10                
+     161/    61A8 : 0E 11 01 02 04 00           DB 0Eh,11h,01h,02h,04h,00h,04h  ; ?
+ AS V1.42 Beta [Bld 227] - Source File vqc10a.asm - Page 5 - 3/4/2026 17:49:54
+
+
+             61AE : 04                
+     162/    61AF : 0E 11 01 0D 15 15           DB 0Eh,11h,01h,0Dh,15h,15h,0Eh  ; @
+             61B5 : 0E                
+     163/    61B6 : 0E 11 11 11 1F 11           DB 0Eh,11h,11h,11h,1Fh,11h,11h  ; A
+             61BC : 11                
+     164/    61BD : 1E 11 11 1E 11 11           DB 1Eh,11h,11h,1Eh,11h,11h,1Eh  ; B
+             61C3 : 1E                
+     165/    61C4 : 0E 11 10 10 10 11           DB 0Eh,11h,10h,10h,10h,11h,0Eh  ; C
+             61CA : 0E                
+     166/    61CB : 1C 12 11 11 11 12           DB 1Ch,12h,11h,11h,11h,12h,1Ch  ; D
+             61D1 : 1C                
+     167/    61D2 : 1F 10 10 1E 10 10           DB 1Fh,10h,10h,1Eh,10h,10h,1Fh  ; E
+             61D8 : 1F                
+     168/    61D9 : 1F 10 10 1C 10 10           DB 1Fh,10h,10h,1Ch,10h,10h,10h  ; F
+             61DF : 10                
+     169/    61E0 : 0E 11 10 10 13 11           DB 0Eh,11h,10h,10h,13h,11h,0Eh  ; G
+             61E6 : 0E                
+     170/    61E7 : 11 11 11 1F 11 11           DB 11h,11h,11h,1Fh,11h,11h,11h  ; H
+             61ED : 11                
+     171/    61EE : 0E 04 04 04 04 04           DB 0Eh,04h,04h,04h,04h,04h,0Eh  ; I
+             61F4 : 0E                
+     172/    61F5 : 07 02 02 02 02 12           DB 07h,02h,02h,02h,02h,12h,0Ch  ; J
+             61FB : 0C                
+     173/    61FC : 11 12 14 18 14 12           DB 11h,12h,14h,18h,14h,12h,11h  ; K
+             6202 : 11                
+     174/    6203 : 10 10 10 10 10 10           DB 10h,10h,10h,10h,10h,10h,1Fh  ; L
+             6209 : 1F                
+     175/    620A : 11 1B 15 11 11 11           DB 11h,1Bh,15h,11h,11h,11h,11h  ; M
+             6210 : 11                
+     176/    6211 : 11 11 19 15 13 11           DB 11h,11h,19h,15h,13h,11h,11h  ; N
+             6217 : 11                
+     177/    6218 : 0E 11 11 11 11 11           DB 0Eh,11h,11h,11h,11h,11h,0Eh  ; O
+             621E : 0E                
+     178/    621F : 1E 11 11 1E 10 10           DB 1Eh,11h,11h,1Eh,10h,10h,10h  ; P
+             6225 : 10                
+     179/    6226 : 0E 11 11 11 15 12           DB 0Eh,11h,11h,11h,15h,12h,0Dh  ; Q
+             622C : 0D                
+     180/    622D : 1E 11 11 1E 14 12           DB 1Eh,11h,11h,1Eh,14h,12h,11h  ; R
+             6233 : 11                
+     181/    6234 : 0F 10 10 0E 01 01           DB 0Fh,10h,10h,0Eh,01h,01h,1Eh  ; S
+             623A : 1E                
+     182/    623B : 1F 04 04 04 04 04           DB 1Fh,04h,04h,04h,04h,04h,04h  ; T
+             6241 : 04                
+     183/    6242 : 11 11 11 11 11 11           DB 11h,11h,11h,11h,11h,11h,0Eh  ; U
+             6248 : 0E                
+     184/    6249 : 11 11 11 11 11 0A           DB 11h,11h,11h,11h,11h,0Ah,04h  ; V
+             624F : 04                
+     185/    6250 : 11 11 11 15 15 1B           DB 11h,11h,11h,15h,15h,1Bh,11h  ; W
+             6256 : 11                
+     186/    6257 : 11 11 0A 04 0A 11           DB 11h,11h,0Ah,04h,0Ah,11h,11h  ; X
+             625D : 11                
+     187/    625E : 11 11 0A 04 04 04           DB 11h,11h,0Ah,04h,04h,04h,04h  ; Y
+             6264 : 04                
+     188/    6265 : 1F 01 02 04 08 10           DB 1Fh,01h,02h,04h,08h,10h,1Fh  ; Z
+             626B : 1F                
+     189/    626C : 07 04 04 04 04 04           DB 07h,04h,04h,04h,04h,04h,07h  ; [
+             6272 : 07                
+     190/    6273 : 00 10 08 04 02 01           DB 00h,10h,08h,04h,02h,01h,00h  ; Backslash
+             6279 : 00                
+     191/    627A : 1C 04 04 04 04 04           DB 1Ch,04h,04h,04h,04h,04h,1Ch  ; ]
+ AS V1.42 Beta [Bld 227] - Source File vqc10a.asm - Page 6 - 3/4/2026 17:49:54
+
+
+             6280 : 1C                
+     192/    6281 : 04 0A 11 00 00 00           DB 04h,0Ah,11h,00h,00h,00h,00h  ; ^
+             6287 : 00                
+     193/    6288 : 00 00 00 00 00 00           DB 00h,00h,00h,00h,00h,00h,1Fh  ; _
+             628E : 1F                
+     194/    628F : 08 04 02 00 00 00           DB 08h,04h,02h,00h,00h,00h,00h  ; `
+             6295 : 00                
+     195/    6296 : 00 00 0E 01 0F 11           DB 00h,00h,0Eh,01h,0Fh,11h,0Fh  ; a
+             629C : 0F                
+     196/    629D : 10 10 16 19 11 11           DB 10h,10h,16h,19h,11h,11h,1Eh  ; b
+             62A3 : 1E                
+     197/    62A4 : 00 00 0E 10 10 11           DB 00h,00h,0Eh,10h,10h,11h,0Eh  ; c
+             62AA : 0E                
+     198/    62AB : 01 01 0D 13 11 11           DB 01h,01h,0Dh,13h,11h,11h,0Fh  ; d
+             62B1 : 0F                
+     199/    62B2 : 00 00 0E 11 1F 10           DB 00h,00h,0Eh,11h,1Fh,10h,0Eh  ; e
+             62B8 : 0E                
+     200/    62B9 : 06 09 08 1C 08 08           DB 06h,09h,08h,1Ch,08h,08h,08h  ; f
+             62BF : 08                
+     201/    62C0 : 00 00 0F 11 0F 01           DB 00h,00h,0Fh,11h,0Fh,01h,06h  ; g
+             62C6 : 06                
+     202/    62C7 : 10 10 16 19 11 11           DB 10h,10h,16h,19h,11h,11h,11h  ; h
+             62CD : 11                
+     203/    62CE : 04 00 0C 04 04 04           DB 04h,00h,0Ch,04h,04h,04h,0Eh  ; i
+             62D4 : 0E                
+     204/    62D5 : 02 00 06 02 02 12           DB 02h,00h,06h,02h,02h,12h,0Ch  ; j
+             62DB : 0C                
+     205/    62DC : 08 08 09 0A 0C 0A           DB 08h,08h,09h,0Ah,0Ch,0Ah,09h  ; k
+             62E2 : 09                
+     206/    62E3 : 0C 04 04 04 04 04           DB 0Ch,04h,04h,04h,04h,04h,0Eh  ; l
+             62E9 : 0E                
+     207/    62EA : 00 00 1A 15 15 11           DB 00h,00h,1Ah,15h,15h,11h,11h  ; m
+             62F0 : 11                
+     208/    62F1 : 00 00 16 19 11 11           DB 00h,00h,16h,19h,11h,11h,11h  ; n
+             62F7 : 11                
+     209/    62F8 : 00 00 0E 11 11 11           DB 00h,00h,0Eh,11h,11h,11h,0Eh  ; o
+             62FE : 0E                
+     210/    62FF : 00 00 1E 11 1E 10           DB 00h,00h,1Eh,11h,1Eh,10h,10h  ; p
+             6305 : 10                
+     211/    6306 : 00 00 0D 13 0F 01           DB 00h,00h,0Dh,13h,0Fh,01h,01h  ; q
+             630C : 01                
+     212/    630D : 00 00 16 19 10 10           DB 00h,00h,16h,19h,10h,10h,10h  ; r
+             6313 : 10                
+     213/    6314 : 00 00 0E 10 0E 01           DB 00h,00h,0Eh,10h,0Eh,01h,1Eh  ; s
+             631A : 1E                
+     214/    631B : 08 08 1C 08 08 09           DB 08h,08h,1Ch,08h,08h,09h,06h  ; t
+             6321 : 06                
+     215/    6322 : 00 00 11 11 11 13           DB 00h,00h,11h,11h,11h,13h,0Dh  ; u
+             6328 : 0D                
+     216/    6329 : 00 00 11 11 11 0A           DB 00h,00h,11h,11h,11h,0Ah,04h  ; v
+             632F : 04                
+     217/    6330 : 00 00 11 11 15 15           DB 00h,00h,11h,11h,15h,15h,0Ah  ; w
+             6336 : 0A                
+     218/    6337 : 00 00 11 0A 04 0A           DB 00h,00h,11h,0Ah,04h,0Ah,11h  ; x
+             633D : 11                
+     219/    633E : 00 00 11 11 0F 01           DB 00h,00h,11h,11h,0Fh,01h,0Eh  ; y
+             6344 : 0E                
+     220/    6345 : 00 00 1F 02 04 08           DB 00h,00h,1Fh,02h,04h,08h,1Fh  ; z
+             634B : 1F                
+     221/    634C : 02 04 04 08 04 04           DB 02h,04h,04h,08h,04h,04h,02h  ; {
+ AS V1.42 Beta [Bld 227] - Source File vqc10a.asm - Page 7 - 3/4/2026 17:49:54
+
+
+             6352 : 02                
+     222/    6353 : 04 04 04 04 04 04           DB 04h,04h,04h,04h,04h,04h,04h  ; |
+             6359 : 04                
+     223/    635A : 08 04 04 02 04 04           DB 08h,04h,04h,02h,04h,04h,08h  ; }
+             6360 : 08                
+     224/    6361 :                     
+ AS V1.42 Beta [Bld 227] - Source File vqc10a.asm - Page 8 - 3/4/2026 17:49:54
+
+
+  Symbol Table (* = unused):
+  --------------------------
+
+*ADRLED :                      23F4 - | *ADRSDP :                       4B7 - |
+*ARCHITECTURE :                                        "i386-unknown-win32" - |
+*CASESENSITIVE :                  0 - | *COMPMODE :                       0 - |
+*CONSTPI :        3.141592653589793 - | *CTC0 :                         0EC - |
+*CTC1 :                         0ED - | *CTC2 :                         0EE - |
+*CTC3 :                         0EF - | *DADP :                         4C3 - |
+*DAK1 :                         45A - | *DAK2 :                         483 - |
+*DATE :                  "3/4/2026" - | *DATLED :                      23F2 - |
+ DELAY :                       605A C | *DIGITAP :                      0F5 - |
+ DIGITS :                      6010 C |  DISPLAY :                     600A C |
+*FALSE :                          0 - |  FONT :                        60CF C |
+*FULLPMMU :                       1 - | *HAS64 :                          0 - |
+*HASFPU :                         0 - | *HASPMMU :                        0 - |
+*INIT :                        6000 C | *INSUPMODE :                      0 - |
+*KEYIN :                        0F9 - | *KEYTAB :                       5EF - |
+*LISTON :                         1 - |  LOOP3 :                       605C C |
+*MACEXP :                         7 - | *MOMCPU :                        80 - |
+*MOMCPUNAME :                 "Z80" - |  MULTIP :                      6061 C |
+ MUL_LOOP :                    606B C | *MUSIC :                        4EE - |
+*NESTMAX :                      100 - | *ONESEG :                       4CA - |
+*PADDING :                        1 - |  PIO2AC :                       0FA - |
+ PIO2BC :                       0FB - |  PORT1 :                        0F8 - |
+ PORT2 :                        0F9 - | *RELAXED :                        0 - |
+ ROMOFS :                       400 - | *SOU1K :                        35E - |
+*SOU2K :                        367 - | *SOUND :                        376 - |
+ START2 :                      600E C |  TEXT1 :                       606F C |
+*TEXT2 :                       607F C | *TEXT3 :                       608F C |
+*TEXT4 :                       609F C | *TEXT5 :                       60AF C |
+*TEXT6 :                       60BF C | *TIME :                  "17:49:54" - |
+*TRUE :                           1 - | *TWOSEG :                       4D9 - |
+*TXT_ERR :                      5A5 - | *USERPORT :                     0F8 - |
+*VERSION :                     142F - |
+
+     62 symbols
+     48 unused symbols
+
+ AS V1.42 Beta [Bld 227] - Source File vqc10a.asm - Page 9 - 3/4/2026 17:49:54
+
+
+  Defined Functions:
+  ------------------
+
+LO                                    | HI                                   
+
+ AS V1.42 Beta [Bld 227] - Source File vqc10a.asm - Page 10 - 3/4/2026 17:49:54
+
+
+  Code Pages:
+  ----------
+
+STANDARD (0 changed characters)
+
+1 code page
+
+0.01 seconds assembly time
+
+    260 lines source file
+      2 passes
+      0 errors
+      0 warnings
