@@ -75,7 +75,7 @@ digits: ; fuer alle Stellen:
         ld a,e
         out (port2),a
         ; Deaktivierung Stellendekoder zur Datenbernahme ueber L/H-Flanke
-        ld a,16
+        inc a
         out (port2),a
 
         inc e
