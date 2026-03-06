@@ -17,7 +17,7 @@ DDR LED Punkt-Matrix-Display VQC10 (Leiterplatte und Code)
 * Ab der 2. Platine geht es mit Flachbandkabel zur nächsten Platine. 
 * Jede bekommt eine eigene Adresse über die 2 Jumper.
 
-=== ACHTUNG ===
+**=== ACHTUNG ===**
 * Das Layout wird noch überarbeitet, da Widerstände für die Kaskadierung fehlen! 
 * Außerdem stimmen die Abstände bei dem VQC10 Footprint nicht!
 
