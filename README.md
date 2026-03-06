@@ -26,7 +26,7 @@ DDR LED Punkt-Matrix-Display VQC10 (Leiterplatte und Code)
 * Schaltungen aus der rfe
 
 ## Simulation
-* Simulation von 1x VQC10 mit Z80 mit SimulIDE
+* Simulation von 1x VQC10 mit Z80 unter SimulIDE
 * https://simulide.com/
 ![Leiterplatte](Images/simulide.png)
 
@@ -49,6 +49,7 @@ Benutzte Entwicklungssoftware:
  
 #### LC80ex
 * Test mit dem Nachbau des DDR-Platinen Computers LC80 
+![Leiterplatte](Images/4xVQC10 am LC80ex_1200.jpg)
 
 #### Z1013
 * ToDo
