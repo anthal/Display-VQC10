@@ -49,7 +49,7 @@ Benutzte Entwicklungssoftware:
  
 #### LC80ex
 * Test mit dem Nachbau des DDR-Platinen Computers LC80 
-![Leiterplatte](Images/4xVQC10 am LC80ex_1200.jpg)
+![Leiterplatte](Images/4xVQC10_am_LC80ex_1200.jpg)
 
 #### Z1013
 * ToDo
