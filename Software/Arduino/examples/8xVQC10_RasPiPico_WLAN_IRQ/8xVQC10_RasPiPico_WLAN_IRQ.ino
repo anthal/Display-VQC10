@@ -120,7 +120,7 @@ void setup() {
 
   // 5 Sekunden lang die IP-Adresse anzeigen:
   Serial.printf("IP: "); Serial.println(text);
-  show_vqc("IP-Adresse: " + text, 5);
+  show_vqc("IP-Adresse:     " + text, 5);
 }
 
 void loop() {
@@ -132,8 +132,10 @@ void loop() {
   // RTC lesen
   datetime_t now;
   rtc_get_datetime(&now);
-  //sprintf(buffer, "Es ist jetzt %02d:%02d:%02d %02d.%02d.%04d", now.hour, now.min, now.sec, now.day, now.month, now.year);
-  sprintf(buffer, "                %02d:%02d %02d.%02d.%04d", now.hour, now.min, now.day, now.month, now.year);
+  const char* monthNames[] = {"", "Januar", "Februar", "Maerz", "April", "Mai", "Juni", 
+                                  "Juli", "August", "September", "Oktober", "November", "Dezember"};
+  sprintf(buffer, "Es ist %02d:%02d:%02d %02d. %s %04d", now.hour, now.min, now.sec, now.day, monthNames[now.month], now.year);
+  //sprintf(buffer, "                %02d:%02d %02d.%02d.%04d", now.hour, now.min, now.day, now.month, now.year);
   //               12345678901234567890123456789012
   text = buffer;
   Serial.println(text);

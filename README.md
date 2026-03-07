@@ -109,3 +109,7 @@ Test mit dem Nachbau des DDR-Platinen Computers LC80
 #### Z1013
 ToDo
 
+## Gehäuse
+![Leiterplatte](Images/8xVQC10_Grundplatte.jpg)
+Grundplatte für IKEA Bilderrahmmen "VÄSTANHED 20x25 cm"
+* STL Datei für 3D-Druck: "Gehäuse/2xVQC10_Grundplatte1.stl"
