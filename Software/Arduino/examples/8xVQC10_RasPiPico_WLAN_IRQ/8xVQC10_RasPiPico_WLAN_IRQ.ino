@@ -14,7 +14,7 @@ NTPClient timeClient(ntpUDP, "pool.ntp.org", 3600, 60000);  // CET
 datetime_t dt;  // RTC-Datentyp
 
 static VQC10<> LED({
-  {20, 19, 18, 17, 16, 10}, // Digits über Dekoder - d:\Projekte\Displays\VQC 10\Arduino\VQC10-main\src\Font5x7.cpp
+  {20, 19, 18, 17, 16, 10}, // Digits über Dekoder
   {28, 27, 26, 22, 21}, 	  // Spalten
   {15, 14, 12, 8},      	  // Zeilen über Dekoder: Pin 8 (De-)Aktivierung des Zeilendecoders
 });
@@ -132,7 +132,8 @@ void loop() {
   // RTC lesen
   datetime_t now;
   rtc_get_datetime(&now);
-  sprintf(buffer, "Es ist jetzt %02d:%02d:%02d %02d.%02d.%04d", now.hour, now.min, now.sec, now.day, now.month, now.year);
+  //sprintf(buffer, "Es ist jetzt %02d:%02d:%02d %02d.%02d.%04d", now.hour, now.min, now.sec, now.day, now.month, now.year);
+  sprintf(buffer, "                %02d:%02d %02d.%02d.%04d", now.hour, now.min, now.day, now.month, now.year);
   //               12345678901234567890123456789012
   text = buffer;
   Serial.println(text);

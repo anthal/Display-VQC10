@@ -57,19 +57,19 @@ DDR LED Punkt-Matrix-Display VQC10 (Leiterplatte und Code)
 | 5 | 11 | SD4 | GP16 |
 | 6 | 13 | SD5 | GP10 |
 
-Leiterplatte 1: 
+**Leiterplatte 1:** 
 * Bit 5: direkt zum Controller
 * Bit 6: direkt zum Controller
 
-Leiterplatte 2:
+**Leiterplatte 2:**
 * Bit 5: zum Controller, Widerstand gegen +5V 
 * Bit 6: direkt zum Controller
 
-Leiterplatte 3:
+**Leiterplatte 3:**
 * Bit 5: direkt zum Controller
 * Bit 6: zum Controller, Widerstand gegen +5V 
 
-Leiterplatte 4:
+**Leiterplatte 4:**
 * Bit 5: zum Controller, Widerstand gegen +5V 
 * Bit 6: zum Controller, Widerstand gegen +5V
 
