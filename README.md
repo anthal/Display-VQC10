@@ -124,5 +124,5 @@ ToDo
 
 ## Gehäuse
 ![Leiterplatte](Images/8xVQC10_Grundplatte.jpg)
-Grundplatte für IKEA Bilderrahmmen "VÄSTANHED 20x25 cm"
+Grundplatte für IKEA Bilderrahmmen "VÄSTANHED 20x25 cm" mit Leiterplatten der Version 1
 * STL Datei für 3D-Druck: "Gehäuse/2xVQC10_Grundplatte1.stl"
