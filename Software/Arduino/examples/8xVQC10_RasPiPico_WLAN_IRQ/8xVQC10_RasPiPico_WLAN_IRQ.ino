@@ -9,7 +9,8 @@
 
 // NTP
 WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "pool.ntp.org", 3600, 60000);  // CET
+//NTPClient timeClient(ntpUDP, "pool.ntp.org", 3600, 60000);  // CET
+NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000);  // UTC
 
 datetime_t dt;  // RTC-Datentyp
 
@@ -30,10 +31,12 @@ RPI_PICO_Timer ITimer(0);  // Timer 0-2 verfügbar
 #define TIMER_INTERVAL_US 2000  // 200 MicroSekunden = 5 kHz (mit 500 Hz auch OK)
 volatile bool timerFlag = false;
 
+
 bool TimerHandler(struct repeating_timer *t) {
   timerFlag = true;
   return true;  // Wichtig für repeating_timer!
 }
+
 
 // Anzeige von Text fuer eine bestimmte Zeit (time) auf dem VQC10:
 void show_vqc(String text, int time) {
@@ -50,6 +53,41 @@ void show_vqc(String text, int time) {
     }
   }
 }
+
+
+bool isDSTGermany(const tm& utc) {
+  int year = utc.tm_year + 1900;
+  int month = utc.tm_mon + 1;
+  int day = utc.tm_mday;
+  int hour = utc.tm_hour;
+
+  if (month < 3 || month > 10) return false;
+  if (month > 3 && month < 10) return true;
+
+  int lastSunday;
+
+  if (month == 3) {
+    lastSunday = 31 - ((5 * year / 4 + 4) % 7);
+    if (day > lastSunday) return true;
+    if (day < lastSunday) return false;
+    return hour >= 1;   // Umschaltung 01:00 UTC
+  }
+
+  lastSunday = 31 - ((5 * year / 4 + 1) % 7);
+  if (day < lastSunday) return true;
+  if (day > lastSunday) return false;
+  return hour < 1;      // Rückschaltung 01:00 UTC
+}
+
+
+time_t germanyLocalTime(time_t utcEpoch) {
+  tm utc;
+  gmtime_r(&utcEpoch, &utc);
+
+  long offset = isDSTGermany(utc) ? 7200 : 3600;
+  return utcEpoch + offset;
+}
+
 
 void setup() {
   // Init:
